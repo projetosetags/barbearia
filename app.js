@@ -42,9 +42,18 @@ servicosCache=data||[]
 safe('servicoSelect').innerHTML=servicosCache.map(s=>`<option value="${s.id}">${s.nome} - ${s.duracao_minutos} min - R$ ${Number(s.valor).toFixed(2)}</option>`).join('')
 }
 /*=========================================================
+007A CARREGAR BARBEIROS
+=========================================================*/
+async function carregarBarbeiros(){
+let {data,error}=await client.from('barbeiros').select('*').eq('ativo',true).order('nome')
+if(error)return
+safe('barbeiroSelect').innerHTML=(data||[]).map(b=>`<option value="${b.id}">${b.nome}</option>`).join('')
+}
+/*=========================================================
 007 SOLICITAR AGENDAMENTO
 =========================================================*/
 async function solicitarAgendamento(){
+let barbeiro_id=safe('barbeiroSelect').value
 let nome=safe('clienteNome').value.trim()
 let telefone=safe('clienteTelefone').value.trim()
 let servico_id=safe('servicoSelect').value
@@ -53,7 +62,14 @@ let hora_solicitada=safe('horaSolicitada').value
 if(!nome||!telefone||!servico_id||!data_agendamento||!hora_solicitada)return alert('Preencha todos os campos')
 let {data:cli,error:erroCli}=await client.from('clientes').insert({nome,telefone}).select().single()
 if(erroCli)return alert('Erro ao cadastrar cliente')
-let {error}=await client.from('agendamentos').insert({cliente_id:cli.id,servico_id,data_agendamento,hora_solicitada,status:'aguardando'})
+let {error}=await client.from('agendamentos').insert({
+cliente_id:cli.id,
+barbeiro_id,
+servico_id,
+data_agendamento,
+hora_solicitada,
+status:'aguardando'
+})
 if(error)return alert('Erro ao solicitar agendamento')
 safe('retornoCliente').innerHTML='Solicitação enviada. Aguarde o aceite do salão.'
 safe('telefoneBusca').value=telefone
@@ -179,4 +195,25 @@ window.addEventListener('load',async()=>{
 safe('dataAgendamento').value=dataHoje()
 safe('dataPainel').value=dataHoje()
 await carregarServicos()
+await carregarBarbeiros()
+gerarHorarios()
 })
+/*=========================================================
+019 GERAR HORARIOS
+=========================================================*/
+function gerarHorarios(){
+let html=''
+for(let h=8;h<=20;h++){
+if(h===8){
+html+=`<option value="08:30">08:30</option>`
+continue
+}
+if(h<20){
+html+=`<option value="${String(h).padStart(2,'0')}:00">${String(h).padStart(2,'0')}:00</option>`
+html+=`<option value="${String(h).padStart(2,'0')}:30">${String(h).padStart(2,'0')}:30</option>`
+}else{
+html+=`<option value="20:00">20:00</option>`
+}
+}
+safe('horaSolicitada').innerHTML=html
+}
