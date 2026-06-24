@@ -26,7 +26,14 @@ return String(h).slice(0,5)
 005 ALTERNAR PAINEL
 =========================================================*/
 function alternarPainel(){
+if(!painelProprietario){
+if(localStorage.getItem('barbearia_admin')!=='SIM'){
+safe('loginAdmin').classList.remove('hidden')
+return
+}
+}
 painelProprietario=!painelProprietario
+safe('loginAdmin').classList.add('hidden')
 safe('viewCliente').classList.toggle('hidden',painelProprietario)
 safe('viewProprietario').classList.toggle('hidden',!painelProprietario)
 safe('btnPainel').innerText=painelProprietario?'App Cliente':'Painel Proprietário'
@@ -124,6 +131,7 @@ safe('dataPainel').value=data
 let {data:lista,error}=await client.from('agendamentos').select('*,clientes(nome,telefone),servicos(nome,duracao_minutos,valor)').eq('data_agendamento',data).order('hora_solicitada',{ascending:true})
 if(error)return alert('Erro ao carregar painel')
 renderPainel(lista||[])
+carregarAgendaSemanal()
 }
 /*=========================================================
 012 RENDER PAINEL
@@ -227,4 +235,45 @@ if(!ocupados.includes(hora))html+=`<option value="${hora}">${hora}</option>`
 }
 }
 safe('horaSolicitada').innerHTML=html
+}
+/*=========================================================
+020 LOGIN ADMIN
+=========================================================*/
+async function entrarAdmin(){
+let login=safe('loginUsuario').value.trim()
+let senha=safe('senhaUsuario').value.trim()
+let {data,error}=await client.from('usuarios').select('*').eq('login',login).eq('senha',senha).eq('ativo',true).single()
+if(error||!data)return alert('Login inválido')
+localStorage.setItem('barbearia_admin','SIM')
+alternarPainel()
+}
+/*=========================================================
+021 AGENDA SEMANAL
+=========================================================*/
+async function carregarAgendaSemanal(){
+let hoje=new Date()
+let inicio=new Date(hoje)
+inicio.setDate(hoje.getDate()-hoje.getDay())
+let fim=new Date(inicio)
+fim.setDate(inicio.getDate()+6)
+let dataInicio=inicio.toISOString().slice(0,10)
+let dataFim=fim.toISOString().slice(0,10)
+let {data=[]}=await client.from('agendamentos').select('*,clientes(nome),servicos(nome)').gte('data_agendamento',dataInicio).lte('data_agendamento',dataFim).order('data_agendamento').order('hora_solicitada')
+renderAgendaSemanal(data)
+}
+/*=========================================================
+022 RENDER AGENDA SEMANAL
+=========================================================*/
+function renderAgendaSemanal(lista){
+let dias=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
+let html='<div class="agendaSemana">'
+for(let i=0;i<7;i++){
+let base=new Date()
+base.setDate(base.getDate()-base.getDay()+i)
+let data=base.toISOString().slice(0,10)
+let eventos=lista.filter(x=>x.data_agendamento===data)
+html+=`<div class="diaSemana"><h4>${dias[i]}<br>${data.split('-').reverse().join('/')}</h4>${eventos.map(e=>`<div class="eventoSemana">${String(e.hora_solicitada).slice(0,5)} ${e.clientes?.nome||''}</div>`).join('')}</div>`
+}
+html+='</div>'
+safe('agendaSemanal').innerHTML=html
 }
