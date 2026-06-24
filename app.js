@@ -272,10 +272,14 @@ let {data,error}=await client
 .eq('login',login)
 .eq('senha',senha)
 .single()
+
+console.log('LOGIN',data,error)
+
 if(error||!data){
 alert('Login inválido')
 return
 }
+
 localStorage.setItem('barbearia_admin','SIM')
 painelProprietario=false
 alternarPainel()
