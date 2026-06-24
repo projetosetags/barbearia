@@ -132,6 +132,8 @@ let {data:lista,error}=await client.from('agendamentos').select('*,clientes(nome
 if(error)return alert('Erro ao carregar painel')
 renderPainel(lista||[])
 carregarAgendaSemanal()
+carregarRecepcao()
+
 }
 /*=========================================================
 012 RENDER PAINEL
@@ -196,6 +198,7 @@ async function alterarStatus(id,status){
 let {error}=await client.from('agendamentos').update({status}).eq('id',id)
 if(error)return alert('Erro ao alterar status')
 carregarPainel()
+carregarRecepcao()
 }
 /*=========================================================
 018 INICIAR SISTEMA
@@ -208,6 +211,7 @@ await carregarBarbeiros()
 await gerarHorarios()
 safe('dataAgendamento').addEventListener('change',gerarHorarios)
 safe('barbeiroSelect').addEventListener('change',gerarHorarios)
+setInterval(carregarRecepcao,10000)
 })
 /*=========================================================
 019 GERAR HORARIOS
@@ -259,21 +263,57 @@ fim.setDate(inicio.getDate()+6)
 let dataInicio=inicio.toISOString().slice(0,10)
 let dataFim=fim.toISOString().slice(0,10)
 let {data=[]}=await client.from('agendamentos').select('*,clientes(nome),servicos(nome)').gte('data_agendamento',dataInicio).lte('data_agendamento',dataFim).order('data_agendamento').order('hora_solicitada')
-renderAgendaSemanal(data)
+renderCalendarioSemanal(data)
 }
 /*=========================================================
-022 RENDER AGENDA SEMANAL
+022 RENDER CALENDARIO SEMANAL
 =========================================================*/
-function renderAgendaSemanal(lista){
+function renderCalendarioSemanal(lista){
 let dias=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
-let html='<div class="agendaSemana">'
-for(let i=0;i<7;i++){
+let html='<div class="calendarioSemana">'
+html+='<div class="calDia">Hora</div>'
+for(let d=0;d<7;d++){
 let base=new Date()
-base.setDate(base.getDate()-base.getDay()+i)
+base.setDate(base.getDate()-base.getDay()+d)
+html+=`<div class="calDia">${dias[d]}</div>`
+}
+for(let h=8;h<=20;h++){
+let horarios=[]
+if(h===8){
+horarios.push('08:30')
+}else if(h===20){
+horarios.push('20:00')
+}else{
+horarios.push(`${String(h).padStart(2,'0')}:00`)
+horarios.push(`${String(h).padStart(2,'0')}:30`)
+}
+for(let horario of horarios){
+html+=`<div class="calHora">${horario}</div>`
+for(let d=0;d<7;d++){
+let base=new Date()
+base.setDate(base.getDate()-base.getDay()+d)
 let data=base.toISOString().slice(0,10)
-let eventos=lista.filter(x=>x.data_agendamento===data)
-html+=`<div class="diaSemana"><h4>${dias[i]}<br>${data.split('-').reverse().join('/')}</h4>${eventos.map(e=>`<div class="eventoSemana">${String(e.hora_solicitada).slice(0,5)} ${e.clientes?.nome||''}</div>`).join('')}</div>`
+let evento=lista.find(x=>x.data_agendamento===data&&String(x.hora_solicitada).slice(0,5)===horario)
+html+=`<div class="calCelula">${evento?`<div class="calEvento">${evento.clientes?.nome||''}</div>`:''}</div>`
+}
+}
 }
 html+='</div>'
-safe('agendaSemanal').innerHTML=html
+safe('calendarioSemanal').innerHTML=html
+}
+/*=========================================================
+023 RECEPCAO
+=========================================================*/
+async function carregarRecepcao(){
+let hoje=dataHoje()
+let {data=[]}=await client.from('agendamentos').select('*,clientes(nome),servicos(duracao_minutos)').eq('data_agendamento',hoje).order('hora_solicitada')
+let atendimento=data.find(x=>x.status==='em_atendimento')
+let proximo=data.find(x=>x.status==='aceito'||x.status==='confirmado'||x.status==='proximo')
+let fila=data.filter(x=>x.status==='aceito'||x.status==='confirmado'||x.status==='proximo').length
+let tempo=0
+data.filter(x=>x.status==='aceito'||x.status==='confirmado'||x.status==='proximo').forEach(x=>tempo+=Number(x.servicos?.duracao_minutos||0))
+safe('recepcaoAtendimento').innerText=atendimento?.clientes?.nome||'-'
+safe('recepcaoProximo').innerText=proximo?.clientes?.nome||'-'
+safe('recepcaoFila').innerText=fila
+safe('recepcaoTempo').innerText=tempo
 }
