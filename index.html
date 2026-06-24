@@ -17,7 +17,7 @@
 </header>
 <main>
 <section id="viewCliente" class="card">
-<h2>002 APP DO CLIENTE</h2>
+<h2>001 APP DO CLIENTE</h2>
 <div class="grid">
 <label>Nome<input id="clienteNome" placeholder="Seu nome"></label>
 <label>WhatsApp<input id="clienteTelefone" placeholder="(00) 00000-0000"></label>
@@ -28,38 +28,54 @@
 </div>
 <button onclick="solicitarAgendamento()" class="principal">Solicitar Agendamento</button>
 <div id="retornoCliente" class="retorno"></div>
-<h3>003 ACOMPANHAR MEU AGENDAMENTO</h3>
+<h3>002 ACOMPANHAR AGENDAMENTO</h3>
 <div class="linhaBusca">
 <input id="telefoneBusca" placeholder="Digite seu WhatsApp para acompanhar">
 <button onclick="acompanharCliente()">Acompanhar</button>
 </div>
 <div id="listaCliente"></div>
 </section>
-<section id="viewProprietario" class="card hidden">
-<h2>004 PAINEL DO PROPRIETÁRIO</h2>
-<div class="grid kpis">
-<div><strong id="kpiAguardando">0</strong><span>Aguardando</span></div>
-<div><strong id="kpiAceitos">0</strong><span>Aceitos</span></div>
-<div><strong id="kpiAtendimento">0</strong><span>Em atendimento</span></div>
-<div><strong id="kpiFinalizados">0</strong><span>Finalizados</span></div>
-</div>
-<div class="linhaBusca">
-<input id="dataPainel" type="date">
-<button onclick="carregarPainel()">Atualizar</button>
-</div>
-<h3>005 SOLICITAÇÕES E FILA DO DIA</h3>
-<div id="listaPainel"></div>
-<h3>006 AGENDA SEMANAL</h3>
-<div id="agendaSemanal"></div>
-</section>
+
 <div id="loginAdmin" class="card hidden">
-<h2>007 LOGIN ADMINISTRADOR</h2>
+<h2>003 LOGIN ADMINISTRADOR</h2>
 <div class="grid">
 <label>Login<input id="loginUsuario"></label>
 <label>Senha<input id="senhaUsuario" type="password"></label>
 </div>
 <button onclick="entrarAdmin()" class="principal">Entrar</button>
 </div>
+
+<section id="viewProprietario" class="card hidden">
+<h2>004 PAINEL DO PROPRIETÁRIO</h2>
+
+<h3>005 RECEPÇÃO</h3>
+<div class="grid kpis">
+<div><strong id="recepcaoAtendimento">-</strong><span>Em Atendimento</span></div>
+<div><strong id="recepcaoProximo">-</strong><span>Próximo</span></div>
+<div><strong id="recepcaoFila">0</strong><span>Fila</span></div>
+<div><strong id="recepcaoTempo">0</strong><span>Minutos</span></div>
+</div>
+
+<h3>006 INDICADORES</h3>
+<div class="grid kpis">
+<div><strong id="kpiAguardando">0</strong><span>Aguardando</span></div>
+<div><strong id="kpiAceitos">0</strong><span>Confirmados</span></div>
+<div><strong id="kpiAtendimento">0</strong><span>Em Atendimento</span></div>
+<div><strong id="kpiFinalizados">0</strong><span>Finalizados</span></div>
+</div>
+
+<div class="linhaBusca">
+<input id="dataPainel" type="date">
+<button onclick="carregarPainel()">Atualizar</button>
+</div>
+
+<h3>007 AGENDA SEMANAL</h3>
+<div id="calendarioSemanal"></div>
+
+<h3>008 FILA E AGENDAMENTOS DO DIA</h3>
+<div id="listaPainel"></div>
+
+</section>
 </main>
 <script src="supabase.js"></script>
 <script src="app.js"></script>
