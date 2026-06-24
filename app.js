@@ -69,12 +69,16 @@ let hora_solicitada=safe('horaSolicitada').value
 if(!nome||!telefone||!servico_id||!data_agendamento||!hora_solicitada)return alert('Preencha todos os campos')
 let {data:cli,error:erroCli}=await client.from('clientes').insert({nome,telefone}).select().single()
 if(erroCli)return alert('Erro ao cadastrar cliente')
+let servico=servicosCache.find(x=>x.id===servico_id)
+let valor=Number(servico?.valor||0)
+
 let {error}=await client.from('agendamentos').insert({
 cliente_id:cli.id,
 barbeiro_id,
 servico_id,
 data_agendamento,
 hora_solicitada,
+valor,
 status:'aguardando'
 })
 if(error)return alert('Erro ao solicitar agendamento')
@@ -133,7 +137,7 @@ if(error)return alert('Erro ao carregar painel')
 renderPainel(lista||[])
 carregarAgendaSemanal()
 carregarRecepcao()
-
+carregarCaixa()
 }
 /*=========================================================
 012 RENDER PAINEL
@@ -199,6 +203,7 @@ let {error}=await client.from('agendamentos').update({status}).eq('id',id)
 if(error)return alert('Erro ao alterar status')
 carregarPainel()
 carregarRecepcao()
+carregarCaixa()
 }
 /*=========================================================
 018 INICIAR SISTEMA
@@ -316,4 +321,20 @@ safe('recepcaoAtendimento').innerText=atendimento?.clientes?.nome||'-'
 safe('recepcaoProximo').innerText=proximo?.clientes?.nome||'-'
 safe('recepcaoFila').innerText=fila
 safe('recepcaoTempo').innerText=tempo
+}
+/*=========================================================
+024 CARREGAR CAIXA
+=========================================================*/
+async function carregarCaixa(){
+let hoje=dataHoje()
+let inicioMes=hoje.substring(0,7)+'-01'
+let {data:dia=[]}=await client.from('agendamentos').select('valor,status').eq('data_agendamento',hoje).eq('status','finalizado')
+let {data:mes=[]}=await client.from('agendamentos').select('valor,status').gte('data_agendamento',inicioMes).eq('status','finalizado')
+let receitaDia=dia.reduce((t,x)=>t+Number(x.valor||0),0)
+let receitaMes=mes.reduce((t,x)=>t+Number(x.valor||0),0)
+let ticket=dia.length?(receitaDia/dia.length):0
+safe('receitaDia').innerText='R$ '+receitaDia.toFixed(2)
+safe('receitaMes').innerText='R$ '+receitaMes.toFixed(2)
+safe('ticketMedio').innerText='R$ '+ticket.toFixed(2)
+safe('clientesDia').innerText=dia.length
 }
