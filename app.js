@@ -138,6 +138,7 @@ renderPainel(lista||[])
 carregarAgendaSemanal()
 carregarRecepcao()
 carregarCaixa()
+carregarReceitaBarbeiros()
 }
 /*=========================================================
 012 RENDER PAINEL
@@ -201,9 +202,23 @@ return base.toTimeString().slice(0,5)
 async function alterarStatus(id,status){
 let {error}=await client.from('agendamentos').update({status}).eq('id',id)
 if(error)return alert('Erro ao alterar status')
+if(status==='finalizado'){
+let ag=await buscarAgendamento(id)
+if(ag){
+let valor=Number(ag.valor||0)
+let comissao=valor*0.5
+await client.from('comissoes').insert({
+barbeiro_id:ag.barbeiro_id,
+agendamento_id:ag.id,
+percentual:50,
+valor:comissao
+})
+}
+}
 carregarPainel()
 carregarRecepcao()
 carregarCaixa()
+carregarReceitaBarbeiros()
 }
 /*=========================================================
 018 INICIAR SISTEMA
@@ -337,4 +352,28 @@ safe('receitaDia').innerText='R$ '+receitaDia.toFixed(2)
 safe('receitaMes').innerText='R$ '+receitaMes.toFixed(2)
 safe('ticketMedio').innerText='R$ '+ticket.toFixed(2)
 safe('clientesDia').innerText=dia.length
+}
+/*=========================================================
+025 RECEITA BARBEIROS
+=========================================================*/
+async function carregarReceitaBarbeiros(){
+let inicioMes=dataHoje().substring(0,7)+'-01'
+let {data=[]}=await client
+.from('agendamentos')
+.select('valor,barbeiro_id,barbeiros(nome)')
+.gte('data_agendamento',inicioMes)
+.eq('status','finalizado')
+
+let mapa={}
+
+data.forEach(x=>{
+let nome=x.barbeiros?.nome||'Sem Nome'
+if(!mapa[nome])mapa[nome]=0
+mapa[nome]+=Number(x.valor||0)
+})
+
+safe('painelBarbeiros').innerHTML=Object.entries(mapa)
+.sort((a,b)=>b[1]-a[1])
+.map(x=>`<div class="itemAgenda"><strong>${x[0]}</strong><br>Receita: R$ ${x[1].toFixed(2)}</div>`)
+.join('')
 }
