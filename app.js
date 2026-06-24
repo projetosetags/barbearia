@@ -72,6 +72,7 @@ status:'aguardando'
 })
 if(error)return alert('Erro ao solicitar agendamento')
 safe('retornoCliente').innerHTML='Solicitação enviada. Aguarde o aceite do salão.'
+await gerarHorarios()
 safe('telefoneBusca').value=telefone
 acompanharCliente()
 }
@@ -196,23 +197,33 @@ safe('dataAgendamento').value=dataHoje()
 safe('dataPainel').value=dataHoje()
 await carregarServicos()
 await carregarBarbeiros()
-gerarHorarios()
+await gerarHorarios()
+safe('dataAgendamento').addEventListener('change',gerarHorarios)
+safe('barbeiroSelect').addEventListener('change',gerarHorarios)
 })
 /*=========================================================
 019 GERAR HORARIOS
 =========================================================*/
-function gerarHorarios(){
+async function gerarHorarios(){
+let data=safe('dataAgendamento').value||dataHoje()
+let barbeiro_id=safe('barbeiroSelect')?.value||''
+let {data:agenda=[]}=await client.from('agendamentos').select('hora_solicitada,status,barbeiro_id').eq('data_agendamento',data).eq('barbeiro_id',barbeiro_id).neq('status','cancelado')
+let ocupados=agenda.map(a=>String(a.hora_solicitada).slice(0,5))
 let html=''
 for(let h=8;h<=20;h++){
 if(h===8){
-html+=`<option value="08:30">08:30</option>`
+let hora='08:30'
+if(!ocupados.includes(hora))html+=`<option value="${hora}">${hora}</option>`
 continue
 }
 if(h<20){
-html+=`<option value="${String(h).padStart(2,'0')}:00">${String(h).padStart(2,'0')}:00</option>`
-html+=`<option value="${String(h).padStart(2,'0')}:30">${String(h).padStart(2,'0')}:30</option>`
+let h1=`${String(h).padStart(2,'0')}:00`
+let h2=`${String(h).padStart(2,'0')}:30`
+if(!ocupados.includes(h1))html+=`<option value="${h1}">${h1}</option>`
+if(!ocupados.includes(h2))html+=`<option value="${h2}">${h2}</option>`
 }else{
-html+=`<option value="20:00">20:00</option>`
+let hora='20:00'
+if(!ocupados.includes(hora))html+=`<option value="${hora}">${hora}</option>`
 }
 }
 safe('horaSolicitada').innerHTML=html
