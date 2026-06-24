@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>001 BARBEARIA AGENDA</title>
+<title>BARBEARIA-LEANDRO DAVID-AGENDA</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <header class="topo">
 <div>
-<h1>001 BARBEARIA</h1>
+<h1>BARBEARIA LEANDRO DAVID</h1>
 <p>Agendamento de corte masculino e barba</p>
 </div>
 <button onclick="alternarPainel()" id="btnPainel">Painel Proprietário</button>
@@ -22,8 +22,9 @@
 <label>Nome<input id="clienteNome" placeholder="Seu nome"></label>
 <label>WhatsApp<input id="clienteTelefone" placeholder="(00) 00000-0000"></label>
 <label>Serviço<select id="servicoSelect"></select></label>
+<label>Barbeiro<select id="barbeiroSelect"></select></label>
 <label>Data<input id="dataAgendamento" type="date"></label>
-<label>Horário desejado<input id="horaSolicitada" type="time"></label>
+<label>Horário desejado<select id="horaSolicitada"></select></label>
 </div>
 <button onclick="solicitarAgendamento()" class="principal">Solicitar Agendamento</button>
 <div id="retornoCliente" class="retorno"></div>
