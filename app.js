@@ -266,9 +266,18 @@ safe('horaSolicitada').innerHTML=html
 async function entrarAdmin(){
 let login=safe('loginUsuario').value.trim()
 let senha=safe('senhaUsuario').value.trim()
-let {data,error}=await client.from('usuarios').select('*').eq('login',login).eq('senha',senha).eq('ativo',true).single()
-if(error||!data)return alert('Login inválido')
+let {data,error}=await client
+.from('usuarios')
+.select('*')
+.eq('login',login)
+.eq('senha',senha)
+.single()
+if(error||!data){
+alert('Login inválido')
+return
+}
 localStorage.setItem('barbearia_admin','SIM')
+painelProprietario=false
 alternarPainel()
 }
 /*=========================================================
