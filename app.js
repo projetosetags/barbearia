@@ -26,18 +26,34 @@ return String(h).slice(0,5)
 005 ALTERNAR PAINEL
 =========================================================*/
 function alternarPainel(){
+
 if(!painelProprietario){
+
 if(localStorage.getItem('barbearia_admin')!=='SIM'){
 safe('loginAdmin').classList.remove('hidden')
 return
 }
-}
-painelProprietario=!painelProprietario
+
+painelProprietario=true
+
+safe('viewCliente').classList.add('hidden')
 safe('loginAdmin').classList.add('hidden')
-safe('viewCliente').classList.toggle('hidden',painelProprietario)
-safe('viewProprietario').classList.toggle('hidden',!painelProprietario)
-safe('btnPainel').innerText=painelProprietario?'App Cliente':'Painel Proprietário'
-if(painelProprietario)carregarPainel()
+safe('viewProprietario').classList.remove('hidden')
+
+safe('btnPainel').innerText='App Cliente'
+
+carregarPainel()
+
+}else{
+
+painelProprietario=false
+
+safe('viewCliente').classList.remove('hidden')
+safe('viewProprietario').classList.add('hidden')
+safe('loginAdmin').classList.add('hidden')
+
+safe('btnPainel').innerText='Painel Proprietário'
+}
 }
 /*=========================================================
 006 CARREGAR SERVIÇOS
@@ -263,17 +279,9 @@ safe('horaSolicitada').innerHTML=html
 /*=========================================================
 020 LOGIN ADMIN
 =========================================================*/
-/*=========================================================
-020 LOGIN ADMIN
-=========================================================*/
 async function entrarAdmin(){
 let login=safe('loginUsuario').value.trim()
 let senha=safe('senhaUsuario').value.trim()
-
-if(!login||!senha){
-alert('Informe login e senha')
-return
-}
 
 let {data,error}=await client
 .from('usuarios')
@@ -282,12 +290,9 @@ let {data,error}=await client
 .eq('senha',senha)
 .maybeSingle()
 
-console.log('USUARIO',data)
-console.log('ERRO',error)
-
 if(error){
 console.error(error)
-alert('Erro ao consultar usuários')
+alert('Erro no login')
 return
 }
 
@@ -298,11 +303,18 @@ return
 
 localStorage.setItem('barbearia_admin','SIM')
 
-safe('viewCliente').classList.add('hidden')
+painelProprietario=true
+
 safe('loginAdmin').classList.add('hidden')
+safe('viewCliente').classList.add('hidden')
 safe('viewProprietario').classList.remove('hidden')
 
-carregarPainel()
+safe('btnPainel').innerText='App Cliente'
+
+await carregarPainel()
+await carregarRecepcao()
+await carregarCaixa()
+await carregarReceitaBarbeiros()
 }
 /*=========================================================
 021 AGENDA SEMANAL
