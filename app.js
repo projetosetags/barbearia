@@ -263,26 +263,46 @@ safe('horaSolicitada').innerHTML=html
 /*=========================================================
 020 LOGIN ADMIN
 =========================================================*/
+/*=========================================================
+020 LOGIN ADMIN
+=========================================================*/
 async function entrarAdmin(){
 let login=safe('loginUsuario').value.trim()
 let senha=safe('senhaUsuario').value.trim()
+
+if(!login||!senha){
+alert('Informe login e senha')
+return
+}
+
 let {data,error}=await client
 .from('usuarios')
 .select('*')
 .eq('login',login)
 .eq('senha',senha)
-.single()
+.maybeSingle()
 
-console.log('LOGIN',data,error)
+console.log('USUARIO',data)
+console.log('ERRO',error)
 
-if(error||!data){
+if(error){
+console.error(error)
+alert('Erro ao consultar usuários')
+return
+}
+
+if(!data){
 alert('Login inválido')
 return
 }
 
 localStorage.setItem('barbearia_admin','SIM')
-painelProprietario=false
-alternarPainel()
+
+safe('viewCliente').classList.add('hidden')
+safe('loginAdmin').classList.add('hidden')
+safe('viewProprietario').classList.remove('hidden')
+
+carregarPainel()
 }
 /*=========================================================
 021 AGENDA SEMANAL
