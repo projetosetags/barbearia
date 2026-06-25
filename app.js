@@ -232,6 +232,7 @@ percentual:50,
 valor:comissao
 })
 }
+await client.rpc('incrementar_atendimento_cliente',{p_cliente_id:ag.cliente_id})
 }
 carregarPainel()
 carregarRecepcao()
@@ -480,6 +481,47 @@ safe('dashClientes').innerText=hojeLista.length
 safe('dashOcupacao').innerText=ocupacao+'%'
 safe('dashBarbeiro').innerText=melhorBarbeiro?melhorBarbeiro[0]:'-'
 safe('dashServico').innerText=melhorServico?melhorServico[0]:'-'
+}
+/*=========================================================
+030 RELATORIO PDF DIARIO
+=========================================================*/
+async function gerarRelatorioDiarioPDF(){
+let data=safe('dataPainel').value||dataHoje()
+let {data:lista=[]}=await client.from('agendamentos').select('*,clientes(nome,telefone),servicos(nome),barbeiros(nome)').eq('data_agendamento',data).order('hora_solicitada')
+const {jsPDF}=window.jspdf
+let doc=new jsPDF()
+doc.setFontSize(16)
+doc.text('BARBEARIA LEANDRO DAVID',10,15)
+doc.setFontSize(12)
+doc.text('Relatório Diário - '+data.split('-').reverse().join('/'),10,25)
+let y=38
+let total=0
+lista.forEach(a=>{
+let valor=Number(a.valor||0)
+if(a.status==='finalizado')total+=valor
+doc.text(`${formatarHora(a.hora_solicitada)} | ${a.clientes?.nome||''} | ${a.servicos?.nome||''} | ${a.barbeiros?.nome||''} | ${a.status} | R$ ${valor.toFixed(2)}`,10,y)
+y+=8
+if(y>280){doc.addPage();y=20}
+})
+doc.text('Total Finalizado: R$ '+total.toFixed(2),10,y+10)
+doc.save('relatorio-diario-barbearia.pdf')
+}
+/*=========================================================
+031 BACKUP CSV
+=========================================================*/
+async function gerarBackupCSV(){
+let {data:lista=[]}=await client.from('agendamentos').select('*,clientes(nome,telefone),servicos(nome),barbeiros(nome)').order('data_agendamento',{ascending:false})
+let linhas=['data,hora,cliente,telefone,servico,barbeiro,status,valor']
+lista.forEach(a=>{
+linhas.push(`${a.data_agendamento},${formatarHora(a.hora_solicitada)},${a.clientes?.nome||''},${a.clientes?.telefone||''},${a.servicos?.nome||''},${a.barbeiros?.nome||''},${a.status},${Number(a.valor||0).toFixed(2)}`)
+})
+let blob=new Blob([linhas.join('\n')],{type:'text/csv;charset=utf-8'})
+let url=URL.createObjectURL(blob)
+let a=document.createElement('a')
+a.href=url
+a.download='backup-barbearia.csv'
+a.click()
+URL.revokeObjectURL(url)
 }
 /*=========================================================
 0  service worker
