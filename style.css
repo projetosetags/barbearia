@@ -68,3 +68,5 @@ input,select{margin-top:5px;padding:10px;border:1px solid #cbd5e1;border-radius:
 .logoTopo p{display:none}
 .logoTopo img{width:36px;height:36px}
 }
+.calDia small{display:block;font-size:11px;font-weight:700;color:#93c5fd;margin-top:2px}
+.tituloAgendaDia{background:#0f172a;color:#fff;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:18px;font-weight:700;text-align:center}
