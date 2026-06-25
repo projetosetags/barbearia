@@ -251,6 +251,7 @@ safe('dataAgendamento').addEventListener('change',gerarHorarios)
 safe('barbeiroSelect').addEventListener('change',gerarHorarios)
 setInterval(carregarRecepcao,10000)
 setInterval(carregarPainel,30000)
+await protegerAdmin()
 })
 /*=========================================================
 019 GERAR HORARIOS
@@ -774,6 +775,41 @@ safe('viewCliente').classList.remove('hidden')
 safe('viewProprietario').classList.add('hidden')
 safe('loginAdmin').classList.add('hidden')
 safe('btnPainel').innerText='Painel Proprietário'
+}
+/*=========================================================
+052 LOGIN ADMIN RESTRITO
+=========================================================*/
+async function entrarAdminRestrito(){
+let login=safe('loginUsuario').value.trim()
+let senha=safe('senhaUsuario').value.trim()
+let {data,error}=await client.from('usuarios').select('*').eq('login',login).eq('senha',senha).in('perfil',['ceo','admin']).eq('ativo',true).maybeSingle()
+if(error){console.error(error);alert('Erro no login');return}
+if(!data){alert('Acesso restrito ao CEO e ao Admin');return}
+localStorage.setItem('barbearia_admin','SIM')
+localStorage.setItem('barbearia_perfil',data.perfil)
+safe('loginAdmin').classList.add('hidden')
+safe('viewProprietario').classList.remove('hidden')
+await atualizarAdminPainel()
+}
+/*=========================================================
+053 SAIR ADMIN RESTRITO
+=========================================================*/
+function sairAdminRestrito(){
+localStorage.removeItem('barbearia_admin')
+localStorage.removeItem('barbearia_perfil')
+safe('loginAdmin').classList.remove('hidden')
+safe('viewProprietario').classList.add('hidden')
+}
+/*=========================================================
+054 PROTEGER ADMIN
+=========================================================*/
+async function protegerAdmin(){
+if(!location.pathname.includes('admin.html'))return
+if(localStorage.getItem('barbearia_admin')==='SIM'){
+safe('loginAdmin').classList.add('hidden')
+safe('viewProprietario').classList.remove('hidden')
+await atualizarAdminPainel()
+}
 }
 /*=========================================================
 0  service worker
