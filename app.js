@@ -23,6 +23,15 @@ if(!h)return''
 return String(h).slice(0,5)
 }
 /*=========================================================
+000 FORMATAR MOEDA
+=========================================================*/
+function moeda(v){
+return Number(v||0).toLocaleString('pt-BR',{
+minimumFractionDigits:2,
+maximumFractionDigits:2
+})
+}
+/*=========================================================
 005 ALTERNAR PAINEL
 =========================================================*/
 function alternarPainel(){
@@ -61,7 +70,7 @@ async function carregarServicos(){
 let {data,error}=await client.from('servicos').select('*').eq('ativo',true).order('nome')
 if(error)return alert('Erro ao carregar serviços')
 servicosCache=data||[]
-safe('servicoSelect').innerHTML=servicosCache.map(s=>`<option value="${s.id}">${s.nome} - ${s.duracao_minutos} min - R$ ${Number(s.valor).toFixed(2)}</option>`).join('')
+safe('servicoSelect').innerHTML=servicosCache.map(s=>`<option value="${s.id}">${s.nome} - ${s.duracao_minutos} min - R$ ${moeda(s.valor)}</option>`).join('')
 }
 /*=========================================================
 007A CARREGAR BARBEIROS
@@ -394,9 +403,9 @@ let {data:mes=[]}=await client.from('agendamentos').select('valor,status').gte('
 let receitaDia=dia.reduce((t,x)=>t+Number(x.valor||0),0)
 let receitaMes=mes.reduce((t,x)=>t+Number(x.valor||0),0)
 let ticket=dia.length?(receitaDia/dia.length):0
-safe('receitaDia').innerText='R$ '+receitaDia.toFixed(2)
-safe('receitaMes').innerText='R$ '+receitaMes.toFixed(2)
-safe('ticketMedio').innerText='R$ '+ticket.toFixed(2)
+safe('receitaDia').innerText='R$ '+moeda(receitaDia)
+safe('receitaMes').innerText='R$ '+moeda(receitaMes)
+safe('ticketMedio').innerText='R$ '+moeda(ticket)
 safe('clientesDia').innerText=dia.length
 }
 /*=========================================================
@@ -420,7 +429,7 @@ mapa[nome]+=Number(x.valor||0)
 
 safe('painelBarbeiros').innerHTML=Object.entries(mapa)
 .sort((a,b)=>b[1]-a[1])
-.map(x=>`<div class="itemAgenda"><strong>${x[0]}</strong><br>Receita: R$ ${x[1].toFixed(2)}</div>`)
+.map(x=>`<div class="itemAgenda"><strong>${x[0]}</strong><br>Receita: R$ ${moeda(x[1])}</div>`)
 .join('')
 }
 /*=========================================================
@@ -489,8 +498,8 @@ barbeiros[barbeiro]=(barbeiros[barbeiro]||0)+Number(x.valor||0)
 })
 let melhorBarbeiro=Object.entries(barbeiros).sort((a,b)=>b[1]-a[1])[0]
 let melhorServico=Object.entries(servicos).sort((a,b)=>b[1]-a[1])[0]
-if(safe('dashHoje'))safe('dashHoje').innerText='R$ '+receitaHoje.toFixed(2)
-if(safe('dashMes'))safe('dashMes').innerText='R$ '+receitaMes.toFixed(2)
+if(safe('dashHoje'))safe('dashHoje').innerText='R$ '+moeda(receitaHoje)
+if(safe('dashMes'))safe('dashMes').innerText='R$ '+moeda(receitaMes)
 if(safe('dashClientes'))safe('dashClientes').innerText=hojeLista.length
 if(safe('dashOcupacao'))safe('dashOcupacao').innerText=ocupacao+'%'
 if(safe('dashBarbeiro'))safe('dashBarbeiro').innerText=melhorBarbeiro?melhorBarbeiro[0]:'-'
@@ -513,11 +522,11 @@ let total=0
 lista.forEach(a=>{
 let valor=Number(a.valor||0)
 if(a.status==='finalizado')total+=valor
-doc.text(`${formatarHora(a.hora_solicitada)} | ${a.clientes?.nome||''} | ${a.servicos?.nome||''} | ${a.barbeiros?.nome||''} | ${a.status} | R$ ${valor.toFixed(2)}`,10,y)
+doc.text(`${formatarHora(a.hora_solicitada)} | ${a.clientes?.nome||''} | ${a.servicos?.nome||''} | ${a.barbeiros?.nome||''} | ${a.status} | R$ ${moeda(valor)}`,10,y)
 y+=8
 if(y>280){doc.addPage();y=20}
 })
-doc.text('Total Finalizado: R$ '+total.toFixed(2),10,y+10)
+doc.text('Total Finalizado: R$ '+moeda(total),10,y+10)
 doc.save('relatorio-diario-barbearia.pdf')
 }
 /*=========================================================
@@ -527,7 +536,7 @@ async function gerarBackupCSV(){
 let {data:lista=[]}=await client.from('agendamentos').select('*,clientes(nome,telefone),servicos(nome),barbeiros(nome)').order('data_agendamento',{ascending:false})
 let linhas=['data,hora,cliente,telefone,servico,barbeiro,status,valor']
 lista.forEach(a=>{
-linhas.push(`${a.data_agendamento},${formatarHora(a.hora_solicitada)},${a.clientes?.nome||''},${a.clientes?.telefone||''},${a.servicos?.nome||''},${a.barbeiros?.nome||''},${a.status},${Number(a.valor||0).toFixed(2)}`)
+linhas.push(`${a.data_agendamento},${formatarHora(a.hora_solicitada)},${a.clientes?.nome||''},${a.clientes?.telefone||''},${a.servicos?.nome||''},${a.barbeiros?.nome||''},${a.status},${moeda(a.valor)}`)
 })
 let blob=new Blob([linhas.join('\n')],{type:'text/csv;charset=utf-8'})
 let url=URL.createObjectURL(blob)
@@ -589,7 +598,7 @@ alert('Configurações salvas')
 async function carregarServicosAdmin(){
 let {data=[],error}=await client.from('servicos').select('*').order('nome')
 if(error)return console.error(error)
-safe('listaServicosAdmin').innerHTML=data.map(s=>`<div class="itemAgenda"><strong>${s.nome}</strong><p>R$ ${Number(s.valor||0).toFixed(2)} | ${s.duracao_minutos} min | ${s.ativo?'Ativo':'Inativo'}</p><div class="botoes"><button class="btnAtender" onclick="editarServico('${s.id}','${s.nome}',${s.valor},${s.duracao_minutos},${s.ativo})">Editar</button><button class="btnRecusar" onclick="toggleServico('${s.id}',${!s.ativo})">${s.ativo?'Desativar':'Ativar'}</button></div></div>`).join('')
+safe('listaServicosAdmin').innerHTML=data.map(s=>`<div class="itemAgenda"><strong>${s.nome}</strong><p>R$ ${moeda(s.valor)} | ${s.duracao_minutos} min | ${s.ativo?'Ativo':'Inativo'}</p><div class="botoes"><button class="btnAtender" onclick="editarServico('${s.id}','${s.nome}',${s.valor},${s.duracao_minutos},${s.ativo})">Editar</button><button class="btnRecusar" onclick="toggleServico('${s.id}',${!s.ativo})">${s.ativo?'Desativar':'Ativar'}</button></div></div>`).join('')
 }
 /*=========================================================
 036 SALVAR SERVICO
