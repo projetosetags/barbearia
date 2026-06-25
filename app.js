@@ -395,11 +395,11 @@ horarios.push(`${String(h).padStart(2,'0')}:30`)
 for(let horario of horarios){
 html+=`<div class="calHora">${horario}</div>`
 for(let d=0;d<7;d++){
-let base=new Date()
-base.setDate(base.getDate()-base.getDay()+d)
+let base=new Date(inicio)
+base.setDate(inicio.getDate()+d)
 let data=base.toISOString().slice(0,10)
 let evento=lista.find(x=>x.data_agendamento===data&&String(x.hora_solicitada).slice(0,5)===horario)
-html+=`<div class="calCelula">${evento?`<div class="calEvento">${evento.clientes?.nome||''}</div>`:''}</div>`
+html+=`<div class="calCelula">${evento?`<div class="calEvento"><strong>${evento.clientes?.nome||''}</strong></div>`:''}</div>`
 }
 }
 }
