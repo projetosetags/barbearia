@@ -49,3 +49,6 @@ input,select{margin-top:5px;padding:10px;border:1px solid #cbd5e1;border-radius:
 #listaServicosAdmin,#listaBarbeirosAdmin,#listaClientesAdmin{margin-top:10px}
 .linhaBusca button{background:#0f172a;color:#fff;border:none;padding:10px 15px;border-radius:8px;cursor:pointer}
 .linhaBusca button:hover{opacity:.9}
+.logoTopo{display:flex;align-items:center;gap:14px}
+.logoTopo img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #facc15;background:#020617}
+.topo h1{letter-spacing:.5px}
