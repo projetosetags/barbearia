@@ -584,16 +584,23 @@ instagram:safe('cfgInstagram').value.trim(),
 inicio_expediente:safe('cfgInicio').value,
 fim_expediente:safe('cfgFim').value
 }
-let {data:existe}=await client.from('configuracoes').select('id').limit(1).maybeSingle()
-let erro=null
-if(existe?.id){
-let r=await client.from('configuracoes').update(payload).eq('id',existe.id)
-erro=r.error
-}else{
-let r=await client.from('configuracoes').insert(payload)
-erro=r.error
+let {data:existe,error:erroBusca}=await client.from('configuracoes').select('id').limit(1).maybeSingle()
+if(erroBusca){
+console.error(erroBusca)
+alert('Erro ao localizar configurações')
+return
 }
-if(erro)return alert('Erro ao salvar configurações')
+let r=null
+if(existe?.id){
+r=await client.from('configuracoes').update(payload).eq('id',existe.id)
+}else{
+r=await client.from('configuracoes').insert(payload)
+}
+if(r.error){
+console.error(r.error)
+alert(r.error.message)
+return
+}
 alert('Configurações salvas')
 }
 /*=========================================================
