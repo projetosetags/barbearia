@@ -356,24 +356,23 @@ await atualizarAdminPainel()
 021 AGENDA SEMANAL
 =========================================================*/
 async function carregarAgendaSemanal(){
-let hoje=new Date()
-let inicio=new Date(hoje)
-inicio.setDate(hoje.getDate()-hoje.getDay())
+let dataBase=safe('dataPainel')?.value||dataHoje()
+let base=new Date(dataBase+'T00:00:00')
+let inicio=new Date(base)
+inicio.setDate(base.getDate()-base.getDay())
 let fim=new Date(inicio)
 fim.setDate(inicio.getDate()+6)
 let dataInicio=inicio.toISOString().slice(0,10)
 let dataFim=fim.toISOString().slice(0,10)
 let {data=[]}=await client.from('agendamentos').select('*,clientes(nome),servicos(nome)').gte('data_agendamento',dataInicio).lte('data_agendamento',dataFim).order('data_agendamento').order('hora_solicitada')
-renderCalendarioSemanal(data)
+renderCalendarioSemanal(data,inicio)
 }
 /*=========================================================
 022 RENDER CALENDARIO SEMANAL
 =========================================================*/
-function renderCalendarioSemanal(lista){
+function renderCalendarioSemanal(lista,inicioParam=null){
 let dias=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
-let hoje=new Date()
-let inicio=new Date(hoje)
-inicio.setDate(hoje.getDate()-hoje.getDay())
+let inicio=inicioParam||new Date()
 let html='<div class="calendarioSemana">'
 html+='<div class="calDia">Hora</div>'
 for(let d=0;d<7;d++){
