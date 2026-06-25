@@ -3,16 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>BARBEARIA-LEANDRO DAVID - AGENDA</title>
+<title>Barbearia Leandro David</title>
 <link rel="stylesheet" href="style.css">
-<link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <header class="topo">
@@ -23,164 +17,15 @@
 <p>Agendamento de corte masculino e barba</p>
 </div>
 </div>
-<button onclick="alternarPainel()" id="btnPainel">Painel Proprietário</button>
 </header>
 <main>
-<section id="viewCliente" class="card">
-<h2>001 APP DO CLIENTE</h2>
+<section class="card">
+<h2>001 ACESSO</h2>
 <div class="grid">
-<label>Nome<input id="clienteNome" placeholder="Seu nome"></label>
-<label>WhatsApp<input id="clienteTelefone" placeholder="(00) 00000-0000"></label>
-<label>Serviço<select id="servicoSelect"></select></label>
-<label>Barbeiro<select id="barbeiroSelect"></select></label>
-<label>Data<input id="dataAgendamento" type="date"></label>
-<label>Horário desejado<select id="horaSolicitada"></select></label>
+<a class="principal linkBotao" href="cliente.html">Cliente - Agendar Horário</a>
+<a class="principal linkBotao" href="admin.html">CEO/Admin - Painel</a>
 </div>
-<button onclick="solicitarAgendamento()" class="principal">Solicitar Agendamento</button>
-<div id="retornoCliente" class="retorno"></div>
-
-<button onclick="obterLocalizacaoCliente()" class="principal">Ver Tempo até o Salão</button>
-<div id="geoCliente" class="retorno"></div>
-
-<h3>002 ACOMPANHAR AGENDAMENTO</h3>
-<div class="linhaBusca">
-<input id="telefoneBusca" placeholder="Digite seu WhatsApp para acompanhar">
-<button onclick="acompanharCliente()">Acompanhar</button>
-</div>
-<div id="listaCliente"></div>
-</section>
-
-<div id="loginAdmin" class="card hidden">
-<h2>003 LOGIN ADMINISTRADOR</h2>
-<div class="grid">
-<label>Login<input id="loginUsuario"></label>
-<label>Senha<input id="senhaUsuario" type="password"></label>
-</div>
-<button onclick="entrarAdmin()" class="principal">Entrar</button>
-</div>
-
-<section id="viewProprietario" class="card hidden">
-<h2>004 PAINEL DO PROPRIETÁRIO</h2>
-<h3>005 DASHBOARD EXECUTIVO</h3>
-<div class="grid kpis">
-<div><strong id="dashHoje">R$ 0,00</strong><span>Receita Hoje</span></div>
-<div><strong id="dashMes">R$ 0,00</strong><span>Receita Mês</span></div>
-<div><strong id="dashClientes">0</strong><span>Clientes Hoje</span></div>
-<div><strong id="dashOcupacao">0%</strong><span>Ocupação</span></div>
-<div><strong id="dashBarbeiro">-</strong><span>Melhor Barbeiro</span></div>
-<div><strong id="dashServico">-</strong><span>Serviço Mais Vendido</span></div>
-</div>
-<h3>005 RECEPÇÃO</h3>
-<div class="grid kpis">
-<div><strong id="recepcaoAtendimento">-</strong><span>Em Atendimento</span></div>
-<div><strong id="recepcaoProximo">-</strong><span>Próximo</span></div>
-<div><strong id="recepcaoFila">0</strong><span>Fila</span></div>
-<div><strong id="recepcaoTempo">0</strong><span>Minutos</span></div>
-</div>
-
-<h3>006 INDICADORES</h3>
-<div class="grid kpis">
-<div><strong id="kpiAguardando">0</strong><span>Aguardando</span></div>
-<div><strong id="kpiAceitos">0</strong><span>Confirmados</span></div>
-<div><strong id="kpiAtendimento">0</strong><span>Em Atendimento</span></div>
-<div><strong id="kpiFinalizados">0</strong><span>Finalizados</span></div>
-</div>
-
-<div class="linhaBusca">
-<input id="dataPainel" type="date">
-<button onclick="carregarPainel()">Atualizar</button>
-</div>
-
-<h3>007 AGENDA SEMANAL</h3>
-<div id="calendarioSemanal"></div>
-
-<h3>008 FILA E AGENDAMENTOS DO DIA</h3>
-<div id="listaPainel"></div>
-
-<h3>009 CAIXA DO DIA</h3>
-<div class="grid kpis">
-<div><strong id="receitaDia">R$ 0,00</strong><span>Receita Dia</span></div>
-<div><strong id="receitaMes">R$ 0,00</strong><span>Receita Mês</span></div>
-<div><strong id="ticketMedio">R$ 0,00</strong><span>Ticket Médio</span></div>
-<div><strong id="clientesDia">0</strong><span>Clientes Dia</span></div>
-</div>
-
-<h3>010 RECEITA POR BARBEIRO</h3>
-<div id="painelBarbeiros"></div>
-<h3>011 RELATÓRIOS</h3>
-<div class="linhaBusca">
-<button onclick="gerarRelatorioDiarioPDF()">PDF Diário</button>
-<button onclick="gerarBackupCSV()">Backup CSV</button>
-</div>
-<h3>012 ADMINISTRAÇÃO</h3>
-<div class="linhaBusca">
-<button onclick="abrirModuloAdmin('moduloConfiguracoes')">Configurações</button>
-<button onclick="abrirModuloAdmin('moduloServicos')">Serviços</button>
-<button onclick="abrirModuloAdmin('moduloBarbeiros')">Barbeiros</button>
-<button onclick="abrirModuloAdmin('moduloClientes')">Clientes</button>
-<button onclick="sairAdmin()">Sair</button>
-</div>
-<div id="moduloConfiguracoes" class="moduloAdmin">
-<h3>046 CONFIGURAÇÕES DA BARBEARIA</h3>
-<div class="grid">
-<label>Nome da Barbearia<input id="cfgNomeSalao"></label>
-<label>WhatsApp<input id="cfgTelefone"></label>
-<label>Instagram<input id="cfgInstagram"></label>
-<label>Início<input id="cfgInicio" type="time"></label>
-<label>Fim<input id="cfgFim" type="time"></label>
-<label>Endereço<input id="cfgEndereco"></label>
-</div>
-<button onclick="salvarConfiguracoes()" class="principal">Salvar Configurações</button>
-</div>
-<div id="moduloServicos" class="moduloAdmin hidden">
-<h3>047 SERVIÇOS</h3>
-<input id="servicoId" type="hidden">
-<div class="grid">
-<label>Serviço<input id="servicoNome"></label>
-<label>Valor<input id="servicoValor" type="number" step="0.01"></label>
-<label>Duração em minutos<input id="servicoDuracao" type="number"></label>
-</div>
-<div class="linhaBusca">
-<button onclick="salvarServico()">Salvar Serviço</button>
-<button onclick="limparServico()">Novo</button>
-</div>
-<div id="listaServicosAdmin"></div>
-</div>
-<div id="moduloBarbeiros" class="moduloAdmin hidden">
-<h3>048 BARBEIROS</h3>
-<input id="barbeiroId" type="hidden">
-<div class="grid">
-<label>Nome<input id="barbeiroNome"></label>
-<label>WhatsApp<input id="barbeiroTelefone"></label>
-</div>
-<div class="linhaBusca">
-<button onclick="salvarBarbeiro()">Salvar Barbeiro</button>
-<button onclick="limparBarbeiro()">Novo</button>
-</div>
-<div id="listaBarbeirosAdmin"></div>
-</div>
-<div id="moduloClientes" class="moduloAdmin hidden">
-<h3>049 CLIENTES</h3>
-<input id="clienteAdminId" type="hidden">
-<div class="grid">
-<label>Nome<input id="clienteAdminNome"></label>
-<label>WhatsApp<input id="clienteAdminTelefone"></label>
-<label>Observação<input id="clienteAdminObservacao"></label>
-</div>
-<div class="linhaBusca">
-<button onclick="salvarClienteAdmin()">Salvar Cliente</button>
-<button onclick="limparClienteAdmin()">Novo</button>
-</div>
-<div class="linhaBusca">
-<input id="buscaClienteAdmin" placeholder="Buscar cliente..." oninput="carregarClientesAdmin()">
-</div>
-<div id="listaClientesAdmin"></div>
-</div>
-
 </section>
 </main>
-<script src="supabase.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="app.js"></script>
 </body>
 </html>
