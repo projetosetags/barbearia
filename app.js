@@ -546,8 +546,243 @@ let destino=data?.endereco||'Rua Coronel Fernandes Martins, 251, Bairro Progress
 window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destino)}`,'_blank')
 }
 /*=========================================================
+033 CARREGAR CONFIGURACOES
+=========================================================*/
+async function carregarConfiguracoes(){
+let {data,error}=await client.from('configuracoes').select('*').limit(1).maybeSingle()
+if(error){console.error(error);return}
+if(!data)return
+safe('cfgNomeSalao').value=data.nome_salao||''
+safe('cfgTelefone').value=data.telefone||''
+safe('cfgEndereco').value=data.endereco||''
+safe('cfgInstagram').value=data.instagram||''
+safe('cfgInicio').value=formatarHora(data.inicio_expediente)||'08:30'
+safe('cfgFim').value=formatarHora(data.fim_expediente)||'20:00'
+}
+/*=========================================================
+034 SALVAR CONFIGURACOES
+=========================================================*/
+async function salvarConfiguracoes(){
+let payload={
+nome_salao:safe('cfgNomeSalao').value.trim(),
+telefone:safe('cfgTelefone').value.trim(),
+endereco:safe('cfgEndereco').value.trim(),
+instagram:safe('cfgInstagram').value.trim(),
+inicio_expediente:safe('cfgInicio').value,
+fim_expediente:safe('cfgFim').value
+}
+let {data:existe}=await client.from('configuracoes').select('id').limit(1).maybeSingle()
+let erro=null
+if(existe?.id){
+let r=await client.from('configuracoes').update(payload).eq('id',existe.id)
+erro=r.error
+}else{
+let r=await client.from('configuracoes').insert(payload)
+erro=r.error
+}
+if(erro)return alert('Erro ao salvar configurações')
+alert('Configurações salvas')
+}
+/*=========================================================
+035 CARREGAR SERVICOS ADMIN
+=========================================================*/
+async function carregarServicosAdmin(){
+let {data=[],error}=await client.from('servicos').select('*').order('nome')
+if(error)return console.error(error)
+safe('listaServicosAdmin').innerHTML=data.map(s=>`<div class="itemAgenda"><strong>${s.nome}</strong><p>R$ ${Number(s.valor||0).toFixed(2)} | ${s.duracao_minutos} min | ${s.ativo?'Ativo':'Inativo'}</p><div class="botoes"><button class="btnAtender" onclick="editarServico('${s.id}','${s.nome}',${s.valor},${s.duracao_minutos},${s.ativo})">Editar</button><button class="btnRecusar" onclick="toggleServico('${s.id}',${!s.ativo})">${s.ativo?'Desativar':'Ativar'}</button></div></div>`).join('')
+}
+/*=========================================================
+036 SALVAR SERVICO
+=========================================================*/
+async function salvarServico(){
+let id=safe('servicoId').value
+let payload={
+nome:safe('servicoNome').value.trim(),
+valor:Number(safe('servicoValor').value||0),
+duracao_minutos:Number(safe('servicoDuracao').value||30),
+ativo:true
+}
+if(!payload.nome)return alert('Informe o serviço')
+let erro=null
+if(id){
+let r=await client.from('servicos').update(payload).eq('id',id)
+erro=r.error
+}else{
+let r=await client.from('servicos').insert(payload)
+erro=r.error
+}
+if(erro)return alert('Erro ao salvar serviço')
+limparServico()
+await carregarServicos()
+await carregarServicosAdmin()
+}
+/*=========================================================
+037 EDITAR SERVICO
+=========================================================*/
+function editarServico(id,nome,valor,duracao,ativo){
+safe('servicoId').value=id
+safe('servicoNome').value=nome
+safe('servicoValor').value=valor
+safe('servicoDuracao').value=duracao
+}
+/*=========================================================
+038 LIMPAR SERVICO
+=========================================================*/
+function limparServico(){
+safe('servicoId').value=''
+safe('servicoNome').value=''
+safe('servicoValor').value=''
+safe('servicoDuracao').value=''
+}
+/*=========================================================
+039 TOGGLE SERVICO
+=========================================================*/
+async function toggleServico(id,ativo){
+await client.from('servicos').update({ativo}).eq('id',id)
+await carregarServicos()
+await carregarServicosAdmin()
+}
+/*=========================================================
+040 CARREGAR BARBEIROS ADMIN
+=========================================================*/
+async function carregarBarbeirosAdmin(){
+let {data=[],error}=await client.from('barbeiros').select('*').order('nome')
+if(error)return console.error(error)
+safe('listaBarbeirosAdmin').innerHTML=data.map(b=>`<div class="itemAgenda"><strong>${b.nome}</strong><p>${b.telefone||''} | ${b.ativo?'Ativo':'Inativo'}</p><div class="botoes"><button class="btnAtender" onclick="editarBarbeiro('${b.id}','${b.nome}','${b.telefone||''}',${b.ativo})">Editar</button><button class="btnRecusar" onclick="toggleBarbeiro('${b.id}',${!b.ativo})">${b.ativo?'Desativar':'Ativar'}</button></div></div>`).join('')
+}
+/*=========================================================
+041 SALVAR BARBEIRO
+=========================================================*/
+async function salvarBarbeiro(){
+let id=safe('barbeiroId').value
+let payload={
+nome:safe('barbeiroNome').value.trim(),
+telefone:safe('barbeiroTelefone').value.trim(),
+ativo:true
+}
+if(!payload.nome)return alert('Informe o barbeiro')
+let erro=null
+if(id){
+let r=await client.from('barbeiros').update(payload).eq('id',id)
+erro=r.error
+}else{
+let r=await client.from('barbeiros').insert(payload)
+erro=r.error
+}
+if(erro)return alert('Erro ao salvar barbeiro')
+limparBarbeiro()
+await carregarBarbeiros()
+await carregarBarbeirosAdmin()
+}
+/*=========================================================
+042 EDITAR BARBEIRO
+=========================================================*/
+function editarBarbeiro(id,nome,telefone,ativo){
+safe('barbeiroId').value=id
+safe('barbeiroNome').value=nome
+safe('barbeiroTelefone').value=telefone
+}
+/*=========================================================
+043 LIMPAR BARBEIRO
+=========================================================*/
+function limparBarbeiro(){
+safe('barbeiroId').value=''
+safe('barbeiroNome').value=''
+safe('barbeiroTelefone').value=''
+}
+/*=========================================================
+044 TOGGLE BARBEIRO
+=========================================================*/
+async function toggleBarbeiro(id,ativo){
+await client.from('barbeiros').update({ativo}).eq('id',id)
+await carregarBarbeiros()
+await carregarBarbeirosAdmin()
+}
+/*=========================================================
+045 CARREGAR CLIENTES ADMIN
+=========================================================*/
+async function carregarClientesAdmin(){
+let busca=safe('buscaClienteAdmin')?.value?.trim()||''
+let query=client.from('clientes').select('*').order('nome')
+if(busca)query=query.ilike('nome',`%${busca}%`)
+let {data=[],error}=await query
+if(error)return console.error(error)
+safe('listaClientesAdmin').innerHTML=data.map(c=>`<div class="itemAgenda"><strong>${c.nome}</strong><p>${c.telefone||''}</p><p>Pontos: ${c.pontos||0} | Atendimentos: ${c.atendimentos||0}</p><p>${c.observacao||''}</p></div>`).join('')
+}
+/*=========================================================
+046 SALVAR CLIENTE ADMIN
+=========================================================*/
+async function salvarClienteAdmin(){
+let id=safe('clienteAdminId').value
+let payload={
+nome:safe('clienteAdminNome').value.trim(),
+telefone:safe('clienteAdminTelefone').value.trim(),
+observacao:safe('clienteAdminObservacao').value.trim()
+}
+if(!payload.nome||!payload.telefone)return alert('Informe nome e telefone')
+let erro=null
+if(id){
+let r=await client.from('clientes').update(payload).eq('id',id)
+erro=r.error
+}else{
+let r=await client.from('clientes').insert(payload)
+erro=r.error
+}
+if(erro)return alert('Erro ao salvar cliente')
+limparClienteAdmin()
+await carregarClientesAdmin()
+}
+/*=========================================================
+047 LIMPAR CLIENTE ADMIN
+=========================================================*/
+function limparClienteAdmin(){
+safe('clienteAdminId').value=''
+safe('clienteAdminNome').value=''
+safe('clienteAdminTelefone').value=''
+safe('clienteAdminObservacao').value=''
+}
+/*=========================================================
+048 CARREGAR MODULOS ADMIN
+=========================================================*/
+async function carregarModulosAdmin(){
+await carregarConfiguracoes()
+await carregarServicosAdmin()
+await carregarBarbeirosAdmin()
+await carregarClientesAdmin()
+}
+/*=========================================================
+049 ABRIR MODULO ADMIN
+=========================================================*/
+function abrirModuloAdmin(id){
+document.querySelectorAll('.moduloAdmin').forEach(x=>x.classList.add('hidden'))
+safe(id).classList.remove('hidden')
+}
+/*=========================================================
+050 ATUALIZAR ADMIN AO ABRIR PAINEL
+=========================================================*/
+async function atualizarAdminPainel(){
+await carregarPainel()
+await carregarRecepcao()
+await carregarCaixa()
+await carregarReceitaBarbeiros()
+await carregarDashboard()
+await carregarModulosAdmin()
+}
+/*=========================================================
+051 LOGOUT ADMIN
+=========================================================*/
+function sairAdmin(){
+localStorage.removeItem('barbearia_admin')
+painelProprietario=false
+safe('viewCliente').classList.remove('hidden')
+safe('viewProprietario').classList.add('hidden')
+safe('loginAdmin').classList.add('hidden')
+safe('btnPainel').innerText='Painel Proprietário'
+}
+/*=========================================================
 0  service worker
 =========================================================*/
 if('serviceWorker' in navigator){
 navigator.serviceWorker.register('sw.js')
 }
+033
