@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Cliente - Barbearia Leandro David</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+<header class="topo">
+<div class="logoTopo">
+<img src="barbeariald.png" alt="Barbearia Leandro David">
+<div>
+<h1>CLIENTE</h1>
+<p>Agende seu corte ou barba</p>
+</div>
+</div>
+<a class="principal linkBotao" href="index.html">Início</a>
+</header>
+<main>
+<section id="viewCliente" class="card">
+<h2>001 APP DO CLIENTE</h2>
+<div class="grid">
+<label>Nome<input id="clienteNome" placeholder="Seu nome"></label>
+<label>WhatsApp<input id="clienteTelefone" placeholder="(00) 00000-0000"></label>
+<label>Serviço<select id="servicoSelect"></select></label>
+<label>Barbeiro<select id="barbeiroSelect"></select></label>
+<label>Data<input id="dataAgendamento" type="date"></label>
+<label>Horário desejado<select id="horaSolicitada"></select></label>
+</div>
+<button onclick="solicitarAgendamento()" class="principal">Solicitar Agendamento</button>
+<button onclick="obterLocalizacaoCliente()" class="principal">Ver Tempo até o Salão</button>
+<div id="retornoCliente" class="retorno"></div>
+<div id="geoCliente" class="retorno"></div>
+<h3>002 ACOMPANHAR AGENDAMENTO</h3>
+<div class="linhaBusca">
+<input id="telefoneBusca" placeholder="Digite seu WhatsApp para acompanhar">
+<button onclick="acompanharCliente()">Acompanhar</button>
+</div>
+<div id="listaCliente"></div>
+</section>
+</main>
+<script src="supabase.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
