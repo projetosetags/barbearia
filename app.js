@@ -242,16 +242,16 @@ carregarReceitaBarbeiros()
 018 INICIAR SISTEMA
 =========================================================*/
 window.addEventListener('load',async()=>{
-safe('dataAgendamento').value=dataHoje()
-safe('dataPainel').value=dataHoje()
-await carregarServicos()
-await carregarBarbeiros()
-await gerarHorarios()
-safe('dataAgendamento').addEventListener('change',gerarHorarios)
-safe('barbeiroSelect').addEventListener('change',gerarHorarios)
-setInterval(carregarRecepcao,10000)
-setInterval(carregarPainel,30000)
-await protegerAdmin()
+if(safe('dataAgendamento'))safe('dataAgendamento').value=dataHoje()
+if(safe('dataPainel'))safe('dataPainel').value=dataHoje()
+if(safe('servicoSelect'))await carregarServicos()
+if(safe('barbeiroSelect'))await carregarBarbeiros()
+if(safe('horaSolicitada'))await gerarHorarios()
+if(safe('dataAgendamento'))safe('dataAgendamento').addEventListener('change',gerarHorarios)
+if(safe('barbeiroSelect'))safe('barbeiroSelect').addEventListener('change',gerarHorarios)
+if(typeof protegerAdmin==='function')await protegerAdmin()
+setInterval(()=>{if(safe('recepcaoFila'))carregarRecepcao()},10000)
+setInterval(()=>{if(safe('listaPainel'))carregarPainel()},30000)
 })
 /*=========================================================
 019 GERAR HORARIOS
@@ -473,25 +473,28 @@ safe('geoCliente').innerHTML=`Localização detectada.<br><button onclick="windo
 async function carregarDashboard(){
 let hoje=dataHoje()
 let inicioMes=hoje.substring(0,7)+'-01'
-let {data=[]}=await client.from('agendamentos').select('valor,status,servico_id,barbeiro_id').gte('data_agendamento',inicioMes)
+let {data=[]}=await client.from('agendamentos').select('valor,status,data_agendamento,servicos(nome),barbeiros(nome)').gte('data_agendamento',inicioMes)
 let hojeLista=data.filter(x=>x.data_agendamento===hoje&&x.status==='finalizado')
+let finalizados=data.filter(x=>x.status==='finalizado')
 let receitaHoje=hojeLista.reduce((t,x)=>t+Number(x.valor||0),0)
-let receitaMes=data.filter(x=>x.status==='finalizado').reduce((t,x)=>t+Number(x.valor||0),0)
-let ocupacao=Math.round((hojeLista.length/23)*100)
+let receitaMes=finalizados.reduce((t,x)=>t+Number(x.valor||0),0)
+let ocupacao=Math.round((hojeLista.length/24)*100)
 let servicos={}
 let barbeiros={}
-data.filter(x=>x.status==='finalizado').forEach(x=>{
-servicos[x.servico_id]=(servicos[x.servico_id]||0)+1
-barbeiros[x.barbeiro_id]=(barbeiros[x.barbeiro_id]||0)+Number(x.valor||0)
+finalizados.forEach(x=>{
+let servico=x.servicos?.nome||'Sem serviço'
+let barbeiro=x.barbeiros?.nome||'Sem barbeiro'
+servicos[servico]=(servicos[servico]||0)+1
+barbeiros[barbeiro]=(barbeiros[barbeiro]||0)+Number(x.valor||0)
 })
 let melhorBarbeiro=Object.entries(barbeiros).sort((a,b)=>b[1]-a[1])[0]
 let melhorServico=Object.entries(servicos).sort((a,b)=>b[1]-a[1])[0]
-safe('dashHoje').innerText='R$ '+receitaHoje.toFixed(2)
-safe('dashMes').innerText='R$ '+receitaMes.toFixed(2)
-safe('dashClientes').innerText=hojeLista.length
-safe('dashOcupacao').innerText=ocupacao+'%'
-safe('dashBarbeiro').innerText=melhorBarbeiro?melhorBarbeiro[0]:'-'
-safe('dashServico').innerText=melhorServico?melhorServico[0]:'-'
+if(safe('dashHoje'))safe('dashHoje').innerText='R$ '+receitaHoje.toFixed(2)
+if(safe('dashMes'))safe('dashMes').innerText='R$ '+receitaMes.toFixed(2)
+if(safe('dashClientes'))safe('dashClientes').innerText=hojeLista.length
+if(safe('dashOcupacao'))safe('dashOcupacao').innerText=ocupacao+'%'
+if(safe('dashBarbeiro'))safe('dashBarbeiro').innerText=melhorBarbeiro?melhorBarbeiro[0]:'-'
+if(safe('dashServico'))safe('dashServico').innerText=melhorServico?melhorServico[0]:'-'
 }
 /*=========================================================
 030 RELATORIO PDF DIARIO
@@ -549,12 +552,12 @@ async function carregarConfiguracoes(){
 let {data,error}=await client.from('configuracoes').select('*').limit(1).maybeSingle()
 if(error){console.error(error);return}
 if(!data)return
-safe('cfgNomeSalao').value=data.nome_salao||''
-safe('cfgTelefone').value=data.telefone||''
-safe('cfgEndereco').value=data.endereco||''
-safe('cfgInstagram').value=data.instagram||''
-safe('cfgInicio').value=formatarHora(data.inicio_expediente)||'08:30'
-safe('cfgFim').value=formatarHora(data.fim_expediente)||'20:00'
+if(safe('cfgNomeSalao'))safe('cfgNomeSalao').value=data.nome_salao||''
+if(safe('cfgTelefone'))safe('cfgTelefone').value=data.telefone||''
+if(safe('cfgEndereco'))safe('cfgEndereco').value=data.endereco||''
+if(safe('cfgInstagram'))safe('cfgInstagram').value=data.instagram||''
+if(safe('cfgInicio'))safe('cfgInicio').value=formatarHora(data.inicio_expediente)||'08:30'
+if(safe('cfgFim'))safe('cfgFim').value=formatarHora(data.fim_expediente)||'20:00'
 }
 /*=========================================================
 034 SALVAR CONFIGURACOES
