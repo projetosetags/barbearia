@@ -453,3 +453,10 @@ let url=`https://www.google.com/maps/dir/${lat},${lon}/${encodeURIComponent(dest
 safe('geoCliente').innerHTML=`Localização detectada.<br><button onclick="window.open('${url}','_blank')" class="principal">Abrir rota no Google Maps</button>`
 },()=>alert('Não foi possível obter localização'))
 }
+
+/*=========================================================
+0  service worker
+=========================================================*/
+if('serviceWorker' in navigator){
+navigator.serviceWorker.register('sw.js')
+}
