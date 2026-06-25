@@ -249,6 +249,7 @@ await gerarHorarios()
 safe('dataAgendamento').addEventListener('change',gerarHorarios)
 safe('barbeiroSelect').addEventListener('change',gerarHorarios)
 setInterval(carregarRecepcao,10000)
+setInterval(carregarPainel,30000)
 })
 /*=========================================================
 019 GERAR HORARIOS
