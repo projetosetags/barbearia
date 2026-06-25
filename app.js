@@ -155,6 +155,7 @@ carregarAgendaSemanal()
 carregarRecepcao()
 carregarCaixa()
 carregarReceitaBarbeiros()
+await carregarDashboard()
 }
 /*=========================================================
 012 RENDER PAINEL
@@ -454,7 +455,32 @@ let url=`https://www.google.com/maps/dir/${lat},${lon}/${encodeURIComponent(dest
 safe('geoCliente').innerHTML=`Localização detectada.<br><button onclick="window.open('${url}','_blank')" class="principal">Abrir rota no Google Maps</button>`
 },()=>alert('Não foi possível obter localização'))
 }
-
+/*=========================================================
+029 DASHBOARD EXECUTIVO
+=========================================================*/
+async function carregarDashboard(){
+let hoje=dataHoje()
+let inicioMes=hoje.substring(0,7)+'-01'
+let {data=[]}=await client.from('agendamentos').select('valor,status,servico_id,barbeiro_id').gte('data_agendamento',inicioMes)
+let hojeLista=data.filter(x=>x.data_agendamento===hoje&&x.status==='finalizado')
+let receitaHoje=hojeLista.reduce((t,x)=>t+Number(x.valor||0),0)
+let receitaMes=data.filter(x=>x.status==='finalizado').reduce((t,x)=>t+Number(x.valor||0),0)
+let ocupacao=Math.round((hojeLista.length/23)*100)
+let servicos={}
+let barbeiros={}
+data.filter(x=>x.status==='finalizado').forEach(x=>{
+servicos[x.servico_id]=(servicos[x.servico_id]||0)+1
+barbeiros[x.barbeiro_id]=(barbeiros[x.barbeiro_id]||0)+Number(x.valor||0)
+})
+let melhorBarbeiro=Object.entries(barbeiros).sort((a,b)=>b[1]-a[1])[0]
+let melhorServico=Object.entries(servicos).sort((a,b)=>b[1]-a[1])[0]
+safe('dashHoje').innerText='R$ '+receitaHoje.toFixed(2)
+safe('dashMes').innerText='R$ '+receitaMes.toFixed(2)
+safe('dashClientes').innerText=hojeLista.length
+safe('dashOcupacao').innerText=ocupacao+'%'
+safe('dashBarbeiro').innerText=melhorBarbeiro?melhorBarbeiro[0]:'-'
+safe('dashServico').innerText=melhorServico?melhorServico[0]:'-'
+}
 /*=========================================================
 0  service worker
 =========================================================*/
