@@ -70,7 +70,9 @@ async function carregarServicos(){
 let {data,error}=await client.from('servicos').select('*').eq('ativo',true).order('nome')
 if(error)return alert('Erro ao carregar serviços')
 servicosCache=data||[]
+if(safe('servicoSelect')){
 safe('servicoSelect').innerHTML=servicosCache.map(s=>`<option value="${s.id}">${s.nome} - ${s.duracao_minutos} min - R$ ${moeda(s.valor)}</option>`).join('')
+}
 }
 /*=========================================================
 007A CARREGAR BARBEIROS
@@ -78,7 +80,9 @@ safe('servicoSelect').innerHTML=servicosCache.map(s=>`<option value="${s.id}">${
 async function carregarBarbeiros(){
 let {data,error}=await client.from('barbeiros').select('*').eq('ativo',true).order('nome')
 if(error)return
+if(safe('barbeiroSelect')){
 safe('barbeiroSelect').innerHTML=(data||[]).map(b=>`<option value="${b.id}">${b.nome}</option>`).join('')
+}
 }
 /*=========================================================
 007 SOLICITAR AGENDAMENTO
