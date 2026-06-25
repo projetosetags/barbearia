@@ -198,11 +198,12 @@ safe('kpiAguardando').innerText=lista.filter(a=>a.status==='aguardando').length
 safe('kpiAceitos').innerText=lista.filter(a=>a.status==='aceito'||a.status==='confirmado'||a.status==='proximo').length
 safe('kpiAtendimento').innerText=lista.filter(a=>a.status==='em_atendimento').length
 safe('kpiFinalizados').innerText=lista.filter(a=>a.status==='finalizado').length
+let dataSelecionada=dataBR(safe('dataPainel').value||dataHoje())
 if(!lista.length){
-safe('listaPainel').innerHTML='<div class="itemAgenda">Nenhum agendamento para esta data.</div>'
+safe('listaPainel').innerHTML=`<div class="tituloAgendaDia">AGENDAMENTOS DO DIA ${dataSelecionada}</div><div class="itemAgenda">Nenhum agendamento para esta data.</div>`
 return
 }
-safe('listaPainel').innerHTML=lista.map(a=>`<div class="itemAgenda"><h4>${formatarHora(a.hora_solicitada)} - ${a.clientes?.nome||''}</h4><p>WhatsApp: ${a.clientes?.telefone||''}</p><p>Serviço: ${a.servicos?.nome||''} - ${a.servicos?.duracao_minutos||0} min</p><p>Status: <strong>${a.status}</strong></p><p>Horário previsto: ${formatarHora(a.hora_prevista)||'não definido'}</p><div class="botoes">${botoesPainel(a)}</div></div>`).join('')
+safe('listaPainel').innerHTML=`<div class="tituloAgendaDia">AGENDAMENTOS DO DIA ${dataSelecionada}</div>`+lista.map(a=>`<div class="itemAgenda"><h4>${formatarHora(a.hora_solicitada)} - ${a.clientes?.nome||''}</h4><p>WhatsApp: ${a.clientes?.telefone||''}</p><p>Serviço: ${a.servicos?.nome||''} - ${a.servicos?.duracao_minutos||0} min</p><p>Status: <strong>${a.status}</strong></p><p>Horário previsto: ${formatarHora(a.hora_prevista)||'não definido'}</p><div class="botoes">${botoesPainel(a)}</div></div>`).join('')
 }
 /*=========================================================
 013 BOTÕES PAINEL
@@ -370,12 +371,16 @@ renderCalendarioSemanal(data)
 =========================================================*/
 function renderCalendarioSemanal(lista){
 let dias=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
+let hoje=new Date()
+let inicio=new Date(hoje)
+inicio.setDate(hoje.getDate()-hoje.getDay())
 let html='<div class="calendarioSemana">'
 html+='<div class="calDia">Hora</div>'
 for(let d=0;d<7;d++){
-let base=new Date()
-base.setDate(base.getDate()-base.getDay()+d)
-html+=`<div class="calDia">${dias[d]}</div>`
+let base=new Date(inicio)
+base.setDate(inicio.getDate()+d)
+let dt=String(base.getDate()).padStart(2,'0')+'-'+String(base.getMonth()+1).padStart(2,'0')
+html+=`<div class="calDia"><strong>${dias[d]}</strong><br><small>${dt}</small></div>`
 }
 for(let h=8;h<=20;h++){
 let horarios=[]
