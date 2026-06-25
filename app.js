@@ -42,8 +42,7 @@ safe('viewProprietario').classList.remove('hidden')
 
 safe('btnPainel').innerText='App Cliente'
 
-carregarPainel()
-
+atualizarAdminPainel()
 }else{
 
 painelProprietario=false
@@ -315,10 +314,7 @@ safe('viewProprietario').classList.remove('hidden')
 
 safe('btnPainel').innerText='App Cliente'
 
-await carregarPainel()
-await carregarRecepcao()
-await carregarCaixa()
-await carregarReceitaBarbeiros()
+await atualizarAdminPainel()
 }
 /*=========================================================
 021 AGENDA SEMANAL
