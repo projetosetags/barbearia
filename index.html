@@ -98,10 +98,15 @@
 
 <h3>010 RECEITA POR BARBEIRO</h3>
 <div id="painelBarbeiros"></div>
-
+<h3>011 RELATÓRIOS</h3>
+<div class="linhaBusca">
+<button onclick="gerarRelatorioDiarioPDF()">PDF Diário</button>
+<button onclick="gerarBackupCSV()">Backup CSV</button>
+</div>
 </section>
 </main>
 <script src="supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
