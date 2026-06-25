@@ -23,7 +23,17 @@ if(!h)return''
 return String(h).slice(0,5)
 }
 /*=========================================================
-000 FORMATAR MOEDA
+004A FORMATAR DATA
+=========================================================*/
+function dataBR(d){
+if(!d)return''
+let s=String(d).slice(0,10)
+if(!s.includes('-'))return s
+let p=s.split('-')
+return `${p[2]}-${p[1]}-${p[0]}`
+}
+/*=========================================================
+004B FORMATAR MOEDA
 =========================================================*/
 function moeda(v){
 return Number(v||0).toLocaleString('pt-BR',{
@@ -121,21 +131,32 @@ acompanharCliente()
 async function acompanharCliente(){
 let telefone=safe('telefoneBusca').value.trim()
 if(!telefone)return alert('Informe o WhatsApp')
-let {data,error}=await client.from('agendamentos').select('*,clientes(nome,telefone),servicos(nome,duracao_minutos,valor)').eq('clientes.telefone',telefone).order('data_agendamento',{ascending:false}).order('hora_solicitada',{ascending:false})
+let {data,error}=await client.from('agendamentos').select('*,clientes(nome,telefone),servicos(nome,duracao_minutos,valor),barbeiros(nome)').eq('clientes.telefone',telefone).in('status',['aguardando','aceito','confirmado','proximo','em_atendimento']).order('data_agendamento',{ascending:true}).order('hora_solicitada',{ascending:true})
 if(error)return alert('Erro ao buscar agendamento')
-renderCliente(data||[])
+let meus=data||[]
+let meu=meus[0]
+if(!meu){renderCliente([]);return}
+let anterior=null
+if(meu.barbeiro_id){
+let {data:fila=[]}=await client.from('agendamentos').select('*,clientes(nome),servicos(nome,duracao_minutos),barbeiros(nome)').eq('data_agendamento',meu.data_agendamento).eq('barbeiro_id',meu.barbeiro_id).in('status',['aceito','confirmado','proximo','em_atendimento']).order('hora_prevista',{ascending:true}).order('hora_solicitada',{ascending:true})
+let idx=fila.findIndex(x=>x.id===meu.id)
+if(idx>0)anterior=fila[idx-1]
+if(!anterior)anterior=fila.find(x=>x.status==='em_atendimento')||null
+}
+renderCliente([meu],anterior)
 }
 /*=========================================================
 009 RENDER CLIENTE
 =========================================================*/
-function renderCliente(lista){
+function renderCliente(lista,anterior=null){
 if(!lista.length){
-safe('listaCliente').innerHTML='<div class="itemAgenda">Nenhum agendamento encontrado.</div>'
+safe('listaCliente').innerHTML='<div class="itemAgenda">Nenhum agendamento ativo encontrado.</div>'
 return
 }
 safe('listaCliente').innerHTML=lista.map(a=>{
 let tempo=calcularTextoTempo(a)
-return `<div class="itemAgenda"><h4>${a.servicos?.nome||''}</h4><p>Cliente: ${a.clientes?.nome||''}</p><p>Data: ${a.data_agendamento}</p><p>Horário solicitado: ${formatarHora(a.hora_solicitada)}</p><p>Horário previsto: ${formatarHora(a.hora_prevista)||'aguardando aceite'}</p><p>Status: <strong>${a.status}</strong></p><p>${tempo}</p></div>`
+let ant=anterior?`<div class="itemAgenda"><h4>Atendimento anterior ao seu</h4><p>Cliente: ${anterior.clientes?.nome||''}</p><p>Serviço: ${anterior.servicos?.nome||''}</p><p>Status: <strong>${anterior.status}</strong></p><p>Horário: ${formatarHora(anterior.hora_prevista||anterior.hora_solicitada)}</p></div>`:''
+return `<div class="itemAgenda"><h4>${a.servicos?.nome||''}</h4><p>Cliente: ${a.clientes?.nome||''}</p><p>Data: ${dataBR(a.data_agendamento)}</p><p>Horário solicitado: ${formatarHora(a.hora_solicitada)}</p><p>Horário previsto: ${formatarHora(a.hora_prevista)||'aguardando aceite'}</p><p>Status: <strong>${a.status}</strong></p><p>${tempo}</p></div>${ant}`
 }).join('')
 }
 /*=========================================================
@@ -148,7 +169,7 @@ if(a.status==='finalizado')return'Atendimento finalizado.'
 if(a.status==='em_atendimento')return'Você está em atendimento.'
 if(!a.hora_prevista)return'Horário previsto ainda não calculado.'
 let agora=new Date()
-let alvo=new Date(`${a.data_agendamento}T${formatarHora(a.hora_prevista)}:00`)
+let alvo=new Date(`${dataBR(a.data_agendamento)}T${formatarHora(a.hora_prevista)}:00`)
 let min=Math.round((alvo-agora)/60000)
 if(min>0)return`Faltam aproximadamente ${min} minutos para seu atendimento.`
 if(min>-20)return'Seu horário está chegando. Dirija-se ao salão.'
@@ -460,7 +481,7 @@ Seu horário foi confirmado.
 Barbearia Leandro David
 Serviço: ${a.servicos?.nome}
 Barbeiro: ${a.barbeiros?.nome}
-Data: ${a.data_agendamento}
+Data: ${dataBR(a.data_agendamento)}
 Horário: ${formatarHora(a.hora_prevista||a.hora_solicitada)}
 Endereço:
 ${cfg.endereco}
@@ -520,7 +541,7 @@ let doc=new jsPDF()
 doc.setFontSize(16)
 doc.text('BARBEARIA LEANDRO DAVID',10,15)
 doc.setFontSize(12)
-doc.text('Relatório Diário - '+data.split('-').reverse().join('/'),10,25)
+doc.text('Relatório Diário - '+dataBR(data),10,25)
 let y=38
 let total=0
 lista.forEach(a=>{
@@ -540,7 +561,7 @@ async function gerarBackupCSV(){
 let {data:lista=[]}=await client.from('agendamentos').select('*,clientes(nome,telefone),servicos(nome),barbeiros(nome)').order('data_agendamento',{ascending:false})
 let linhas=['data,hora,cliente,telefone,servico,barbeiro,status,valor']
 lista.forEach(a=>{
-linhas.push(`${a.data_agendamento},${formatarHora(a.hora_solicitada)},${a.clientes?.nome||''},${a.clientes?.telefone||''},${a.servicos?.nome||''},${a.barbeiros?.nome||''},${a.status},${moeda(a.valor)}`)
+linhas.push(`${dataBR(a.data_agendamento)},${formatarHora(a.hora_solicitada)},${a.clientes?.nome||''},${a.clientes?.telefone||''},${a.servicos?.nome||''},${a.barbeiros?.nome||''},${a.status},${moeda(a.valor)}`)
 })
 let blob=new Blob([linhas.join('\n')],{type:'text/csv;charset=utf-8'})
 let url=URL.createObjectURL(blob)
@@ -609,7 +630,7 @@ alert('Configurações salvas')
 async function carregarServicosAdmin(){
 let {data=[],error}=await client.from('servicos').select('*').order('nome')
 if(error)return console.error(error)
-safe('listaServicosAdmin').innerHTML=data.map(s=>`<div class="itemAgenda"><strong>${s.nome}</strong><p>R$ ${moeda(s.valor)} | ${s.duracao_minutos} min | ${s.ativo?'Ativo':'Inativo'}</p><div class="botoes"><button class="btnAtender" onclick="editarServico('${s.id}','${s.nome}',${s.valor},${s.duracao_minutos},${s.ativo})">Editar</button><button class="btnRecusar" onclick="toggleServico('${s.id}',${!s.ativo})">${s.ativo?'Desativar':'Ativar'}</button></div></div>`).join('')
+safe('listaServicosAdmin').innerHTML=data.map(s=>`<div class="itemAgenda"><strong>${s.nome}</strong><p>R$ ${moeda(s.valor)} | ${s.duracao_minutos} min | ${s.ativo?'Ativo':'Excluído'}</p><div class="botoes"><button class="btnAtender" onclick="editarServico('${s.id}','${s.nome}',${s.valor},${s.duracao_minutos},${s.ativo})">Editar</button><button class="btnRecusar" onclick="excluirServico('${s.id}')">Excluir</button></div></div>`).join('')
 }
 /*=========================================================
 036 SALVAR SERVICO
@@ -655,10 +676,11 @@ safe('servicoValor').value=''
 safe('servicoDuracao').value=''
 }
 /*=========================================================
-039 TOGGLE SERVICO
+039 EXCLUIR SERVICO
 =========================================================*/
-async function toggleServico(id,ativo){
-await client.from('servicos').update({ativo}).eq('id',id)
+async function excluirServico(id){
+if(!confirm('Excluir este serviço?'))return
+await client.from('servicos').update({ativo:false}).eq('id',id)
 await carregarServicos()
 await carregarServicosAdmin()
 }
@@ -668,7 +690,7 @@ await carregarServicosAdmin()
 async function carregarBarbeirosAdmin(){
 let {data=[],error}=await client.from('barbeiros').select('*').order('nome')
 if(error)return console.error(error)
-safe('listaBarbeirosAdmin').innerHTML=data.map(b=>`<div class="itemAgenda"><strong>${b.nome}</strong><p>${b.telefone||''} | ${b.ativo?'Ativo':'Inativo'}</p><div class="botoes"><button class="btnAtender" onclick="editarBarbeiro('${b.id}','${b.nome}','${b.telefone||''}',${b.ativo})">Editar</button><button class="btnRecusar" onclick="toggleBarbeiro('${b.id}',${!b.ativo})">${b.ativo?'Desativar':'Ativar'}</button></div></div>`).join('')
+safe('listaBarbeirosAdmin').innerHTML=data.map(b=>`<div class="itemAgenda"><strong>${b.nome}</strong><p>${b.telefone||''} | ${b.ativo?'Ativo':'Excluído'}</p><div class="botoes"><button class="btnAtender" onclick="editarBarbeiro('${b.id}','${b.nome}','${b.telefone||''}',${b.ativo})">Editar</button><button class="btnRecusar" onclick="excluirBarbeiro('${b.id}')">Excluir</button></div></div>`).join('')
 }
 /*=========================================================
 041 SALVAR BARBEIRO
@@ -711,10 +733,11 @@ safe('barbeiroNome').value=''
 safe('barbeiroTelefone').value=''
 }
 /*=========================================================
-044 TOGGLE BARBEIRO
+044 EXCLUIR BARBEIRO
 =========================================================*/
-async function toggleBarbeiro(id,ativo){
-await client.from('barbeiros').update({ativo}).eq('id',id)
+async function excluirBarbeiro(id){
+if(!confirm('Excluir este barbeiro?'))return
+await client.from('barbeiros').update({ativo:false}).eq('id',id)
 await carregarBarbeiros()
 await carregarBarbeirosAdmin()
 }
