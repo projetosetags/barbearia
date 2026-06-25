@@ -178,6 +178,7 @@ let html=''
 if(a.status==='aguardando')html+=`<button class="btnAceitar" onclick="aceitarAgendamento('${a.id}')">Aceitar</button><button class="btnRecusar" onclick="alterarStatus('${a.id}','recusado')">Recusar</button>`
 if(a.status==='aceito'||a.status==='confirmado'||a.status==='proximo')html+=`<button class="btnAtender" onclick="alterarStatus('${a.id}','em_atendimento')">Iniciar</button>`
 if(a.status==='em_atendimento')html+=`<button class="btnFinalizar" onclick="alterarStatus('${a.id}','finalizado')">Finalizar</button>`
+html+=`<button class="btnAtender" onclick="whatsappCliente('${a.id}')">WhatsApp</button>`
 return html
 }
 /*=========================================================
@@ -421,4 +422,34 @@ safe('painelBarbeiros').innerHTML=Object.entries(mapa)
 .sort((a,b)=>b[1]-a[1])
 .map(x=>`<div class="itemAgenda"><strong>${x[0]}</strong><br>Receita: R$ ${x[1].toFixed(2)}</div>`)
 .join('')
+}
+/*=========================================================
+026 WHATSAPP AGENDAMENTO
+=========================================================*/
+function abrirWhatsapp(numero,msg){
+let tel=String(numero||'').replace(/\D/g,'')
+if(!tel.startsWith('55'))tel='55'+tel
+window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`,'_blank')
+}
+/*=========================================================
+027 WHATSAPP CLIENTE
+=========================================================*/
+async function whatsappCliente(id){
+let {data:a,error}=await client.from('agendamentos').select('*,clientes(nome,telefone),servicos(nome),barbeiros(nome)').eq('id',id).single()
+if(error||!a)return alert('Erro ao buscar agendamento')
+let msg=`Olá ${a.clientes?.nome||''}. Seu agendamento na Barbearia Leandro David está confirmado para ${a.data_agendamento} às ${formatarHora(a.hora_prevista||a.hora_solicitada)}. Serviço: ${a.servicos?.nome||''}. Barbeiro: ${a.barbeiros?.nome||''}.`
+abrirWhatsapp(a.clientes?.telefone,msg)
+}
+/*=========================================================
+028 GEOLOCALIZACAO CLIENTE
+=========================================================*/
+function obterLocalizacaoCliente(){
+if(!navigator.geolocation)return alert('Geolocalização indisponível')
+navigator.geolocation.getCurrentPosition(pos=>{
+let lat=pos.coords.latitude
+let lon=pos.coords.longitude
+let destino='Barbearia Leandro David'
+let url=`https://www.google.com/maps/dir/${lat},${lon}/${encodeURIComponent(destino)}`
+safe('geoCliente').innerHTML=`Localização detectada.<br><button onclick="window.open('${url}','_blank')" class="principal">Abrir rota no Google Maps</button>`
+},()=>alert('Não foi possível obter localização'))
 }
