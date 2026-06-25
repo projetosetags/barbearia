@@ -103,6 +103,71 @@
 <button onclick="gerarRelatorioDiarioPDF()">PDF Diário</button>
 <button onclick="gerarBackupCSV()">Backup CSV</button>
 </div>
+<h3>012 ADMINISTRAÇÃO</h3>
+<div class="linhaBusca">
+<button onclick="abrirModuloAdmin('moduloConfiguracoes')">Configurações</button>
+<button onclick="abrirModuloAdmin('moduloServicos')">Serviços</button>
+<button onclick="abrirModuloAdmin('moduloBarbeiros')">Barbeiros</button>
+<button onclick="abrirModuloAdmin('moduloClientes')">Clientes</button>
+<button onclick="sairAdmin()">Sair</button>
+</div>
+<div id="moduloConfiguracoes" class="moduloAdmin">
+<h3>046 CONFIGURAÇÕES DA BARBEARIA</h3>
+<div class="grid">
+<label>Nome da Barbearia<input id="cfgNomeSalao"></label>
+<label>WhatsApp<input id="cfgTelefone"></label>
+<label>Instagram<input id="cfgInstagram"></label>
+<label>Início<input id="cfgInicio" type="time"></label>
+<label>Fim<input id="cfgFim" type="time"></label>
+<label>Endereço<input id="cfgEndereco"></label>
+</div>
+<button onclick="salvarConfiguracoes()" class="principal">Salvar Configurações</button>
+</div>
+<div id="moduloServicos" class="moduloAdmin hidden">
+<h3>047 SERVIÇOS</h3>
+<input id="servicoId" type="hidden">
+<div class="grid">
+<label>Serviço<input id="servicoNome"></label>
+<label>Valor<input id="servicoValor" type="number" step="0.01"></label>
+<label>Duração em minutos<input id="servicoDuracao" type="number"></label>
+</div>
+<div class="linhaBusca">
+<button onclick="salvarServico()">Salvar Serviço</button>
+<button onclick="limparServico()">Novo</button>
+</div>
+<div id="listaServicosAdmin"></div>
+</div>
+<div id="moduloBarbeiros" class="moduloAdmin hidden">
+<h3>048 BARBEIROS</h3>
+<input id="barbeiroId" type="hidden">
+<div class="grid">
+<label>Nome<input id="barbeiroNome"></label>
+<label>WhatsApp<input id="barbeiroTelefone"></label>
+</div>
+<div class="linhaBusca">
+<button onclick="salvarBarbeiro()">Salvar Barbeiro</button>
+<button onclick="limparBarbeiro()">Novo</button>
+</div>
+<div id="listaBarbeirosAdmin"></div>
+</div>
+<div id="moduloClientes" class="moduloAdmin hidden">
+<h3>049 CLIENTES</h3>
+<input id="clienteAdminId" type="hidden">
+<div class="grid">
+<label>Nome<input id="clienteAdminNome"></label>
+<label>WhatsApp<input id="clienteAdminTelefone"></label>
+<label>Observação<input id="clienteAdminObservacao"></label>
+</div>
+<div class="linhaBusca">
+<button onclick="salvarClienteAdmin()">Salvar Cliente</button>
+<button onclick="limparClienteAdmin()">Novo</button>
+</div>
+<div class="linhaBusca">
+<input id="buscaClienteAdmin" placeholder="Buscar cliente..." oninput="carregarClientesAdmin()">
+</div>
+<div id="listaClientesAdmin"></div>
+</div>
+
 </section>
 </main>
 <script src="supabase.js"></script>
