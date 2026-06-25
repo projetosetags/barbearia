@@ -439,8 +439,22 @@ window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`,'_blank')
 =========================================================*/
 async function whatsappCliente(id){
 let {data:a,error}=await client.from('agendamentos').select('*,clientes(nome,telefone),servicos(nome),barbeiros(nome)').eq('id',id).single()
+let {data:cfg}=await client
+.from('configuracoes')
+.select('*')
+.limit(1)
+.single()
 if(error||!a)return alert('Erro ao buscar agendamento')
-let msg=`Olá ${a.clientes?.nome||''}. Seu agendamento na Barbearia Leandro David está confirmado para ${a.data_agendamento} às ${formatarHora(a.hora_prevista||a.hora_solicitada)}. Serviço: ${a.servicos?.nome||''}. Barbeiro: ${a.barbeiros?.nome||''}.`
+let msg=`Olá ${a.clientes?.nome}!
+Seu horário foi confirmado.
+Barbearia Leandro David
+Serviço: ${a.servicos?.nome}
+Barbeiro: ${a.barbeiros?.nome}
+Data: ${a.data_agendamento}
+Horário: ${formatarHora(a.hora_prevista||a.hora_solicitada)}
+Endereço:
+${cfg.endereco}
+Esperamos você!`
 abrirWhatsapp(a.clientes?.telefone,msg)
 }
 /*=========================================================
@@ -522,6 +536,14 @@ a.href=url
 a.download='backup-barbearia.csv'
 a.click()
 URL.revokeObjectURL(url)
+}
+/*=========================================================
+032 ABRIR MAPA
+=========================================================*/
+async function abrirMapaSalao(){
+let {data}=await client.from('configuracoes').select('*').limit(1).single()
+let destino=data?.endereco||'Rua Coronel Fernandes Martins, 251, Bairro Progresso, Laguna - SC, CEP 88790-000'
+window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destino)}`,'_blank')
 }
 /*=========================================================
 0  service worker
