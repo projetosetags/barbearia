@@ -39,3 +39,5 @@ input,select{margin-top:5px;padding:10px;border:1px solid #cbd5e1;border-radius:
 .calDia{background:#0f172a;color:#fff;padding:8px;text-align:center;font-weight:700}
 .calCelula{background:#fff;min-height:38px;padding:2px}
 .calEvento{background:#2563eb;color:#fff;font-size:10px;padding:3px;border-radius:4px;overflow:hidden}
+.kpis div{transition:.25s;cursor:pointer;}
+.kpis div:hover{transform:translateY(-3px);box-shadow:0 6px 16px rgba(0,0,0,.15);}
