@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BARBEARIA-LEANDRO DAVID - AGENDA</title>
 <link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -28,6 +29,10 @@
 </div>
 <button onclick="solicitarAgendamento()" class="principal">Solicitar Agendamento</button>
 <div id="retornoCliente" class="retorno"></div>
+
+<button onclick="obterLocalizacaoCliente()" class="principal">Ver Tempo até o Salão</button>
+<div id="geoCliente" class="retorno"></div>
+
 <h3>002 ACOMPANHAR AGENDAMENTO</h3>
 <div class="linhaBusca">
 <input id="telefoneBusca" placeholder="Digite seu WhatsApp para acompanhar">
