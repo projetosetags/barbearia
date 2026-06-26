@@ -429,11 +429,15 @@ let base=new Date(inicio)
 base.setDate(inicio.getDate()+d)
 let data=base.toISOString().slice(0,10)
 let evento=lista.find(x=>x.data_agendamento===data&&String(x.hora_solicitada).slice(0,5)===horario)
+if(evento){
 let nomeEvento=evento?.clientes?.nome||''
 nomeEvento=nomeEvento.replace(/CLIENTE DESTAQUE\s*[-–]?\s*/gi,'').trim()
 let corEvento=corAgendaEvento(evento)
 let clienteId=evento?.cliente_id||''
-html+=`<div class="calCelula">${evento?`<button type="button" class="calEvento" style="background-color:${corEvento}!important;border-color:${corEvento}!important;color:#fff!important" onclick="abrirClientePersonalizado('${clienteId}')"><strong>${nomeEvento}</strong></button>`:''}</div>`
+html+=`<div class="calCelula"><button type="button" class="calEvento" style="--cor-evento:${corEvento};background:${corEvento}!important;background-color:${corEvento}!important;background-image:none!important;border-color:${corEvento}!important;color:#fff!important;-webkit-text-fill-color:#fff!important" onclick="abrirClientePersonalizado('${clienteId}')"><strong>${nomeEvento}</strong></button></div>`
+}else{
+html+='<div class="calCelula"></div>'
+}
 }
 }
 }
@@ -779,15 +783,11 @@ return null
 =========================================================*/
 function corAgendaEvento(evento){
 if(!evento)return'#2563eb'
-if(evento.cor_agenda)return evento.cor_agenda
-if(evento.status==='aguardando')return'#f59e0b'
-if(evento.status==='aceito')return'#2563eb'
-if(evento.status==='confirmado')return'#16a34a'
-if(evento.status==='proximo')return'#7c3aed'
-if(evento.status==='em_atendimento')return'#dc2626'
-if(evento.status==='finalizado')return'#0f766e'
-if(evento.status==='cancelado'||evento.status==='recusado'||evento.status==='desistente')return'#64748b'
-return'#2563eb'
+let cores=['#dc2626','#ea580c','#d97706','#16a34a','#059669','#0f766e','#0891b2','#0284c7','#2563eb','#4f46e5','#7c3aed','#9333ea','#be185d','#9f1239','#65a30d','#15803d']
+let chave=String(evento.cliente_id||evento.id||evento.clientes?.nome||'')
+let soma=0
+for(let i=0;i<chave.length;i++)soma+=chave.charCodeAt(i)
+return cores[soma%cores.length]
 }
 /*=========================================================
 023 RECEPCAO
