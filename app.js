@@ -549,28 +549,185 @@ if(safe('dashBarbeiro'))safe('dashBarbeiro').innerText=melhorBarbeiro?melhorBarb
 if(safe('dashServico'))safe('dashServico').innerText=melhorServico?melhorServico[0]:'-'
 }
 /*=========================================================
-030 RELATORIO PDF DIARIO
+030 RELATORIO PDF DIARIO PERSONALIZADO
 =========================================================*/
 async function gerarRelatorioDiarioPDF(){
 let data=safe('dataPainel').value||dataHoje()
-let {data:lista=[]}=await client.from('agendamentos').select('*,clientes(nome,telefone),servicos(nome),barbeiros(nome)').eq('data_agendamento',data).order('hora_solicitada')
+let {data:lista=[],error}=await client.from('agendamentos').select('*,clientes(nome,telefone),servicos(nome),barbeiros(nome)').eq('data_agendamento',data).order('hora_solicitada')
+if(error)return alert('Erro ao gerar relatório')
+let {data:cfg}=await client.from('configuracoes').select('*').limit(1).maybeSingle()
 const {jsPDF}=window.jspdf
-let doc=new jsPDF()
-doc.setFontSize(16)
-doc.text('BARBEARIA LEANDRO DAVID',10,15)
-doc.setFontSize(12)
-doc.text('Relatório Diário - '+dataBR(data),10,25)
-let y=38
-let total=0
-lista.forEach(a=>{
-let valor=Number(a.valor||0)
-if(a.status==='finalizado')total+=valor
-doc.text(`${formatarHora(a.hora_solicitada)} | ${a.clientes?.nome||''} | ${a.servicos?.nome||''} | ${a.barbeiros?.nome||''} | ${a.status} | R$ ${moeda(valor)}`,10,y)
-y+=8
-if(y>280){doc.addPage();y=20}
+let doc=new jsPDF('p','mm','a4')
+let margem=10
+let y=12
+let nomeSalao=cfg?.nome_salao||'BARBEARIA LEANDRO DAVID'
+let telefoneSalao=cfg?.telefone||''
+let enderecoSalao=cfg?.endereco||''
+let logo=await carregarLogoRelatorio()
+doc.setFillColor(8,15,35)
+doc.rect(0,0,210,34,'F')
+if(logo)doc.addImage(logo,'PNG',10,6,22,22)
+doc.setTextColor(255,255,255)
+doc.setFontSize(17)
+doc.setFont(undefined,'bold')
+doc.text(nomeSalao,logo?36:10,14)
+doc.setFontSize(9)
+doc.setFont(undefined,'normal')
+doc.text(`Relatório Diário - ${dataBR(data)}`,logo?36:10,21)
+doc.text(`${telefoneSalao}${telefoneSalao&&enderecoSalao?' | ':''}${enderecoSalao}`,logo?36:10,27,{maxWidth:160})
+y=42
+let concluidos=lista.filter(a=>a.status==='finalizado')
+let agendados=lista.filter(a=>['aguardando','aceito','confirmado','proximo','em_atendimento'].includes(a.status))
+let desistencias=lista.filter(a=>['cancelado','recusado','desistente'].includes(a.status)||a.compareceu===false)
+let demais=lista.filter(a=>!concluidos.includes(a)&&!agendados.includes(a)&&!desistencias.includes(a))
+let totalConcluido=concluidos.reduce((t,a)=>t+Number(a.valor||0),0)
+let totalGeral=lista.reduce((t,a)=>t+Number(a.valor||0),0)
+y=cardsResumoRelatorio(doc,y,[
+['Total do Dia',lista.length],
+['Concluídos',concluidos.length],
+['Agendados',agendados.length],
+['Desistências',desistencias.length],
+['Receita Finalizada','R$ '+moeda(totalConcluido)]
+])
+y+=6
+y=tabelaRelatorio(doc,y,'TRABALHOS CONCLUÍDOS',concluidos,true)
+y=tabelaRelatorio(doc,y,'AGENDADOS / EM ATENDIMENTO / AGUARDANDO',agendados,false)
+y=tabelaRelatorio(doc,y,'DESISTÊNCIAS / RECUSADOS / CANCELADOS / NÃO COMPARECEU',desistencias,false)
+if(demais.length)y=tabelaRelatorio(doc,y,'DEMAIS SITUAÇÕES',demais,false)
+if(y>250){doc.addPage();y=15}
+doc.setFillColor(8,15,35)
+doc.rect(10,y,190,12,'F')
+doc.setTextColor(255,255,255)
+doc.setFontSize(11)
+doc.setFont(undefined,'bold')
+doc.text(`TOTAL FINALIZADO: R$ ${moeda(totalConcluido)}    |    TOTAL GERAL LANÇADO: R$ ${moeda(totalGeral)}`,14,y+8)
+doc.setTextColor(0,0,0)
+doc.setFontSize(8)
+doc.setFont(undefined,'normal')
+doc.text(`Emitido em ${new Date().toLocaleString('pt-BR')}`,10,287)
+doc.text('Sistema de Agendamento - Barbearia',145,287)
+doc.save(`relatorio-diario-${data}.pdf`)
+}
+async function carregarLogoRelatorio(){
+try{
+let caminhos=['barbeariald.png','img/logo.png','assets/logo.png','assets/barbearia.png','logo.png']
+for(let c of caminhos){
+let r=await fetch(c)
+if(r.ok){
+let blob=await r.blob()
+return await blobParaDataURL(blob)
+}
+}
+return null
+}catch(e){
+return null
+}
+}
+function blobParaDataURL(blob){
+return new Promise(resolve=>{
+let reader=new FileReader()
+reader.onloadend=()=>resolve(reader.result)
+reader.readAsDataURL(blob)
 })
-doc.text('Total Finalizado: R$ '+moeda(total),10,y+10)
-doc.save('relatorio-diario-barbearia.pdf')
+}
+function cardsResumoRelatorio(doc,y,itens){
+let x=10
+itens.forEach((item,i)=>{
+let w=i===4?46:34
+doc.setFillColor(245,247,250)
+doc.roundedRect(x,y,w,18,2,2,'F')
+doc.setDrawColor(210,220,235)
+doc.roundedRect(x,y,w,18,2,2,'S')
+doc.setTextColor(8,15,35)
+doc.setFontSize(8)
+doc.setFont(undefined,'normal')
+doc.text(String(item[0]),x+3,y+6)
+doc.setFontSize(12)
+doc.setFont(undefined,'bold')
+doc.text(String(item[1]),x+3,y+14)
+x+=w+3
+})
+return y+22
+}
+function tabelaRelatorio(doc,y,titulo,lista,mostrarTotal){
+if(y>245){doc.addPage();y=15}
+doc.setFillColor(8,15,35)
+doc.rect(10,y,190,9,'F')
+doc.setTextColor(255,255,255)
+doc.setFontSize(10)
+doc.setFont(undefined,'bold')
+doc.text(titulo,12,y+6)
+y+=11
+if(!lista.length){
+doc.setTextColor(90,90,90)
+doc.setFontSize(9)
+doc.setFont(undefined,'normal')
+doc.text('Nenhum registro encontrado.',12,y+5)
+return y+12
+}
+let colunas=[
+{t:'Data',x:10,w:22},
+{t:'Hora',x:32,w:18},
+{t:'Nome',x:50,w:43},
+{t:'Serviço',x:93,w:36},
+{t:'Barbeiro',x:129,w:32},
+{t:'Situação',x:161,w:24},
+{t:'Valor',x:185,w:15}
+]
+doc.setFillColor(225,232,242)
+doc.rect(10,y,190,8,'F')
+doc.setTextColor(8,15,35)
+doc.setFontSize(8)
+doc.setFont(undefined,'bold')
+colunas.forEach(c=>doc.text(c.t,c.x+1,y+5))
+y+=8
+doc.setFont(undefined,'normal')
+lista.forEach((a,i)=>{
+if(y>275){doc.addPage();y=15}
+let cor=i%2===0?250:242
+doc.setFillColor(cor,cor,cor)
+doc.rect(10,y,190,8,'F')
+doc.setTextColor(0,0,0)
+doc.setFontSize(7)
+let linha=[
+dataBR(a.data_agendamento),
+formatarHora(a.hora_solicitada),
+a.clientes?.nome||'',
+a.servicos?.nome||'',
+a.barbeiros?.nome||'',
+textoStatusRelatorio(a),
+'R$ '+moeda(a.valor)
+]
+colunas.forEach((c,idx)=>{
+let txt=String(linha[idx]||'')
+doc.text(txt,c.x+1,y+5,{maxWidth:c.w-2})
+})
+y+=8
+})
+if(mostrarTotal){
+let total=lista.reduce((t,a)=>t+Number(a.valor||0),0)
+doc.setFillColor(235,247,238)
+doc.rect(10,y,190,8,'F')
+doc.setTextColor(8,80,35)
+doc.setFontSize(8)
+doc.setFont(undefined,'bold')
+doc.text(`Subtotal concluído: R$ ${moeda(total)}`,12,y+5)
+y+=10
+}
+return y+5
+}
+function textoStatusRelatorio(a){
+if(a.compareceu===false)return'Não compareceu'
+if(a.status==='em_atendimento')return'Em atendimento'
+if(a.status==='finalizado')return'Finalizado'
+if(a.status==='aguardando')return'Aguardando'
+if(a.status==='aceito')return'Aceito'
+if(a.status==='confirmado')return'Confirmado'
+if(a.status==='proximo')return'Próximo'
+if(a.status==='cancelado')return'Cancelado'
+if(a.status==='recusado')return'Recusado'
+if(a.status==='desistente')return'Desistente'
+return a.status||'-'
 }
 /*=========================================================
 031 BACKUP CSV
