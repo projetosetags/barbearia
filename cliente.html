@@ -29,6 +29,10 @@
 <label>Barbeiro<select id="barbeiroSelect"></select></label>
 <label>Data<input id="dataAgendamento" type="date"></label>
 <label>Horário desejado<select id="horaSolicitada"></select></label>
+<label>Selfie do Cliente</label>
+<input id="clienteFoto" type="file" accept="image/*" capture="user">
+<button onclick="enviarSelfieCliente()" class="principal">Enviar Selfie</button>
+<img id="previewSelfieCliente" style="display:none;width:90px;height:90px;border-radius:50%;object-fit:cover;margin-top:10px">
 </div>
 <button onclick="solicitarAgendamento()" class="principal">Solicitar Agendamento</button>
 <button onclick="obterLocalizacaoCliente()" class="principal">Ver Tempo até o Salão</button>
