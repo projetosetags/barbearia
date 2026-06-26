@@ -1,4 +1,4 @@
-const CACHE_NAME='barbearia-ld-v2'
+const CACHE_NAME='barbearia-ld-v10'
 self.addEventListener('install',e=>{
 self.skipWaiting()
 })
