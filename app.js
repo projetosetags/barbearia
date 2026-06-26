@@ -1426,13 +1426,37 @@ safe('btnPainel').innerText='Painel Proprietário'
 async function entrarAdminRestrito(){
 let login=safe('loginUsuario').value.trim()
 let senha=safe('senhaUsuario').value.trim()
-let {data,error}=await client.from('usuarios').select('*').eq('login',login).eq('senha',senha).in('perfil',['ceo','admin']).eq('ativo',true).maybeSingle()
-if(error){console.error(error);alert('Erro no login');return}
-if(!data){alert('Acesso restrito ao CEO e ao Admin');return}
+
+let {data,error}=await client
+.from('usuarios')
+.select('*')
+.eq('login',login)
+.eq('senha',senha)
+.eq('ativo',true)
+.maybeSingle()
+
+if(error){
+console.error(error)
+alert('Erro no login')
+return
+}
+
+if(!data){
+alert('Login ou senha inválidos')
+return
+}
+
+if(data.perfil!=='admin'&&data.perfil!=='ceo'){
+alert('Acesso restrito ao CEO e ao Admin')
+return
+}
+
 localStorage.setItem('barbearia_admin','SIM')
 localStorage.setItem('barbearia_perfil',data.perfil)
+
 safe('loginAdmin').classList.add('hidden')
 safe('viewProprietario').classList.remove('hidden')
+
 await atualizarAdminPainel()
 }
 /*=========================================================
@@ -1472,11 +1496,13 @@ behavior:'smooth'
 }
 
 /*=========================================================
-0  service worker
+0 SERVICE WORKER
 =========================================================*/
 if('serviceWorker' in navigator){
-window.addEventListener('load',()=>{
-navigator.serviceWorker.register('./sw.js')
+window.addEventListener('load',async()=>{
+let regs=await navigator.serviceWorker.getRegistrations()
+for(let reg of regs){await reg.unregister()}
+navigator.serviceWorker.register('./sw.js?v=2')
 })
 }
 
