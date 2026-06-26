@@ -886,7 +886,6 @@ safe('geoCliente').innerHTML=`
 </div>
 `
 },()=>alert('Não foi possível obter localização'))
-}ão foi possível obter localização'))
 }
 /*=========================================================
 029 DASHBOARD EXECUTIVO
