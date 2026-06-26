@@ -766,6 +766,21 @@ return null
 }
 }
 /*=========================================================
+022K COR AGENDA EVENTO
+=========================================================*/
+function corAgendaEvento(evento){
+if(!evento)return'#2563eb'
+if(evento.cor_agenda)return evento.cor_agenda
+if(evento.status==='aguardando')return'#f59e0b'
+if(evento.status==='aceito')return'#2563eb'
+if(evento.status==='confirmado')return'#16a34a'
+if(evento.status==='proximo')return'#7c3aed'
+if(evento.status==='em_atendimento')return'#dc2626'
+if(evento.status==='finalizado')return'#0f766e'
+if(evento.status==='cancelado'||evento.status==='recusado'||evento.status==='desistente')return'#64748b'
+return'#2563eb'
+}
+/*=========================================================
 023 RECEPCAO
 =========================================================*/
 async function carregarRecepcao(){
