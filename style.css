@@ -98,47 +98,8 @@ input,select{margin-top:5px;padding:10px;border:1px solid #cbd5e1;border-radius:
 .botoesClientePersonalizado button{background:#fff;color:#0f172a;border:0;border-radius:8px;padding:10px 16px;font-weight:800;cursor:pointer}
 .botoesClientePersonalizado button:first-child{background:#2563eb;color:#fff}
 
-.calEvento{
-display:block!important;
-width:100%!important;
-min-height:28px!important;
-padding:5px!important;
-border-radius:6px!important;
-border:0!important;
-outline:none!important;
-cursor:pointer!important;
-text-align:left!important;
-font-size:12px!important;
-line-height:1.25!important;
-font-weight:700!important;
-color:#fff!important;
--webkit-text-fill-color:#fff!important;
--webkit-appearance:none!important;
-appearance:none!important;
-background:var(--cor-evento,#2563eb)!important;
-background-color:var(--cor-evento,#2563eb)!important;
-background-image:none!important;
-box-shadow:0 1px 3px rgba(0,0,0,.18)!important;
-transition:none!important;
-}
-.calEvento:hover,
-.calEvento:focus,
-.calEvento:active,
-.calEvento:visited{
-color:#fff!important;
--webkit-text-fill-color:#fff!important;
-background:var(--cor-evento,#2563eb)!important;
-background-color:var(--cor-evento,#2563eb)!important;
-background-image:none!important;
-outline:none!important;
-}
-.calEvento strong{
-display:block!important;
-color:#fff!important;
--webkit-text-fill-color:#fff!important;
-font-weight:700!important;
-}
-.calCelula{
-padding:2px!important;
-background:#fff!important;
-}
+.calCelula{padding:2px!important;background:#fff!important}
+.calEvento{display:block!important;width:100%!important;min-height:28px!important;padding:5px!important;border-radius:6px!important;border:0!important;outline:none!important;cursor:pointer!important;text-align:left!important;font-size:12px!important;line-height:1.25!important;font-weight:700!important;color:#fff!important;-webkit-text-fill-color:#fff!important;-webkit-appearance:none!important;appearance:none!important;background:var(--cor-evento,#2563eb)!important;background-color:var(--cor-evento,#2563eb)!important;background-image:none!important;box-shadow:0 1px 3px rgba(0,0,0,.18)!important;transition:none!important}
+.calEvento:hover,.calEvento:focus,.calEvento:active,.calEvento:visited{color:#fff!important;-webkit-text-fill-color:#fff!important;background:var(--cor-evento,#2563eb)!important;background-color:var(--cor-evento,#2563eb)!important;background-image:none!important;outline:none!important}
+.calEvento strong{display:block!important;color:#fff!important;-webkit-text-fill-color:#fff!important;font-weight:700!important}
+
