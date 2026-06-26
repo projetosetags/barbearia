@@ -94,4 +94,7 @@ input,select{margin-top:5px;padding:10px;border:1px solid #cbd5e1;border-radius:
 .tabelaClientePersonalizado{grid-template-columns:1fr}
 .tabelaClientePersonalizado .th{display:none}
 }
+.botoesClientePersonalizado{display:flex;gap:10px;align-items:center}
+.botoesClientePersonalizado button{background:#fff;color:#0f172a;border:0;border-radius:8px;padding:10px 16px;font-weight:800;cursor:pointer}
+.botoesClientePersonalizado button:first-child{background:#2563eb;color:#fff}
 
