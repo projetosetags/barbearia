@@ -295,6 +295,10 @@ carregarReceitaBarbeiros()
 018 INICIAR SISTEMA
 =========================================================*/
 window.addEventListener('load',async()=>{
+if(location.search.includes('cliente=1')){
+localStorage.removeItem('barbearia_admin')
+localStorage.removeItem('barbearia_perfil')
+}
 if(safe('dataAgendamento'))safe('dataAgendamento').value=dataHoje()
 if(safe('dataPainel'))safe('dataPainel').value=dataHoje()
 if(safe('servicoSelect'))await carregarServicos()
