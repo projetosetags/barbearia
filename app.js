@@ -859,12 +859,10 @@ abrirWhatsapp(a.clientes?.telefone,msg)
 =========================================================*/
 async function obterLocalizacaoCliente(){
 if(!navigator.geolocation)return alert('Geolocalização indisponível')
-let {data:cfg}=await client.from('configuracoes').select('*').limit(1).maybeSingle()
-let endereco=cfg?.endereco||'Rua Coronel Fernandes Martins, 251, Bairro Progresso, Laguna - SC, 88790-000'
+let destino='Barbearia Leandro David, Rua Coronel Fernandes Martins, 251, em frente à UDESC, Laguna - SC'
 navigator.geolocation.getCurrentPosition(pos=>{
 let lat=pos.coords.latitude
 let lon=pos.coords.longitude
-let destino=`L.D Barbearia, ${endereco}`
 let urlCarro=`https://www.google.com/maps/dir/?api=1&origin=${lat},${lon}&destination=${encodeURIComponent(destino)}&travelmode=driving`
 let urlPe=`https://www.google.com/maps/dir/?api=1&origin=${lat},${lon}&destination=${encodeURIComponent(destino)}&travelmode=walking`
 safe('geoCliente').innerHTML=`
@@ -875,6 +873,7 @@ safe('geoCliente').innerHTML=`
 </div>
 `
 },()=>alert('Não foi possível obter localização'))
+}ão foi possível obter localização'))
 }
 /*=========================================================
 029 DASHBOARD EXECUTIVO
@@ -1107,8 +1106,7 @@ URL.revokeObjectURL(url)
 032 ABRIR MAPA
 =========================================================*/
 async function abrirMapaSalao(){
-let {data}=await client.from('configuracoes').select('*').limit(1).single()
-let destino=data?.endereco||'Rua Coronel Fernandes Martins, 251, Bairro Progresso, Laguna - SC, CEP 88790-000'
+let destino='Barbearia Leandro David, Rua Coronel Fernandes Martins, 251, em frente à UDESC, Laguna - SC'
 window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destino)}`,'_blank')
 }
 /*=========================================================
