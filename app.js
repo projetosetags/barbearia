@@ -4,6 +4,7 @@
 let painelProprietario=false
 let servicosCache=[]
 let clientePersonalizadoAtual=[]
+let clienteAdminAtualId=''
 /*=========================================================
 002 SAFE
 =========================================================*/
@@ -475,7 +476,12 @@ return
 }
 let cliente=lista[0].clientes||{}
 let nome=cliente.nome||'Cliente'
-let telefone=cliente.telefone||''
+let telefone=telefoneBR(cliente.telefone||'')
+let foto=cliente.foto_url||''
+let cpf=cliente.cpf||''
+let nascimento=cliente.nascimento?dataBR(cliente.nascimento):''
+let endereco=cliente.endereco||''
+let observacao=cliente.observacao||''
 let finalizados=lista.filter(x=>x.status==='finalizado')
 let ativos=lista.filter(x=>['aguardando','aceito','confirmado','proximo','em_atendimento'].includes(x.status))
 let cancelados=lista.filter(x=>['cancelado','recusado','desistente'].includes(x.status)||x.compareceu===false)
@@ -484,6 +490,24 @@ let ticketMedio=finalizados.length?totalGasto/finalizados.length:0
 let ultimo=lista[0]
 safe('clientePersonalizadoSub').innerText=`${nome}${telefone?' | '+telefone:''}`
 let html=''
+html+='<div class="itemAgenda">'
+html+='<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">'
+if(foto){
+html+=`<img src="${foto}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:4px solid #0f172a">`
+}else{
+html+=`<div style="width:120px;height:120px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;border:4px solid #0f172a;font-weight:900;color:#64748b">SEM FOTO</div>`
+}
+html+='<div>'
+html+=`<h4>Cliente Personalizado</h4>`
+html+=`<p><strong>Nome completo:</strong> ${nome}</p>`
+html+=`<p><strong>Telefone:</strong> ${telefone||'-'}</p>`
+if(cpf)html+=`<p><strong>CPF:</strong> ${cpf}</p>`
+if(nascimento)html+=`<p><strong>Nascimento:</strong> ${nascimento}</p>`
+if(endereco)html+=`<p><strong>Endereço:</strong> ${endereco}</p>`
+if(observacao)html+=`<p><strong>Observação:</strong> ${observacao}</p>`
+html+='</div>'
+html+='</div>'
+html+='</div>'
 html+='<div class="cardsClientePersonalizado">'
 html+=cardClientePersonalizado('Total de Registros',lista.length)
 html+=cardClientePersonalizado('Concluídos',finalizados.length)
@@ -493,12 +517,11 @@ html+=cardClientePersonalizado('Total Gasto','R$ '+moeda(totalGasto))
 html+=cardClientePersonalizado('Ticket Médio','R$ '+moeda(ticketMedio))
 html+='</div>'
 html+='<div class="itemAgenda">'
-html+=`<h4>Resumo do Cliente</h4>`
-html+=`<p><strong>Nome:</strong> ${nome}</p>`
-html+=`<p><strong>WhatsApp:</strong> ${telefone||'-'}</p>`
+html+=`<h4>Resumo de Atendimento</h4>`
 html+=`<p><strong>Último registro:</strong> ${dataBR(ultimo.data_agendamento)} às ${formatarHora(ultimo.hora_solicitada)}</p>`
 html+=`<p><strong>Último serviço:</strong> ${ultimo.servicos?.nome||'-'}</p>`
 html+=`<p><strong>Último barbeiro:</strong> ${ultimo.barbeiros?.nome||'-'}</p>`
+html+=`<p><strong>Última situação:</strong> ${textoStatusClientePersonalizado(ultimo)}</p>`
 html+='</div>'
 html+=tabelaClientePersonalizado('TRABALHOS CONCLUÍDOS',finalizados)
 html+=tabelaClientePersonalizado('AGENDADOS / EM ATENDIMENTO / AGUARDANDO',ativos)
@@ -1259,7 +1282,19 @@ let query=client.from('clientes').select('*').order('nome')
 if(busca)query=query.ilike('nome',`%${busca}%`)
 let {data=[],error}=await query
 if(error)return console.error(error)
-safe('listaClientesAdmin').innerHTML=data.map(c=>`<div class="itemAgenda"><strong>${c.nome}</strong><p>${c.telefone||''}</p><p>Pontos: ${c.pontos||0} | Atendimentos: ${c.atendimentos||0}</p><p>${c.observacao||''}</p></div>`).join('')
+safe('listaClientesAdmin').innerHTML=data.map(c=>`
+<div class="itemAgenda">
+<div style="display:flex;gap:12px;align-items:center">
+${c.foto_url?`<img src="${c.foto_url}" style="width:56px;height:56px;border-radius:50%;object-fit:cover">`:''}
+<div>
+<strong>${c.nome}</strong>
+<p>${c.telefone||''}</p>
+<p>Pontos: ${c.pontos||0} | Atendimentos: ${c.atendimentos||0}</p>
+<p>${c.observacao||''}</p>
+</div>
+</div>
+</div>
+`).join('')
 }
 /*=========================================================
 046 SALVAR CLIENTE ADMIN
@@ -1272,16 +1307,51 @@ telefone:safe('clienteAdminTelefone').value.trim(),
 observacao:safe('clienteAdminObservacao').value.trim()
 }
 if(!payload.nome||!payload.telefone)return alert('Informe nome e telefone')
-let erro=null
+let r=null
 if(id){
-let r=await client.from('clientes').update(payload).eq('id',id)
-erro=r.error
+r=await client.from('clientes').update(payload).eq('id',id).select().single()
 }else{
-let r=await client.from('clientes').insert(payload)
-erro=r.error
+r=await client.from('clientes').insert(payload).select().single()
 }
-if(erro)return alert('Erro ao salvar cliente')
-limparClienteAdmin()
+if(r.error){
+console.error(r.error)
+alert('Erro ao salvar cliente')
+return
+}
+clienteAdminAtualId=r.data.id
+safe('clienteAdminId').value=r.data.id
+alert('Cliente salvo. Agora você pode enviar a selfie.')
+await carregarClientesAdmin()
+}
+/*=========================================================
+046A ENVIAR SELFIE CLIENTE
+=========================================================*/
+async function enviarSelfieCliente(){
+let cliente_id=safe('clienteAdminId')?.value||clienteAdminAtualId
+let file=safe('clienteFoto')?.files?.[0]
+if(!cliente_id)return alert('Salve o cliente antes de enviar a selfie.')
+if(!file)return alert('Selecione ou tire uma selfie.')
+let ext=(file.name.split('.').pop()||'jpg').toLowerCase()
+let path=`selfies/${cliente_id}.${ext}`
+let {error:erroUpload}=await client.storage.from('clientes').upload(path,file,{upsert:true,contentType:file.type})
+if(erroUpload){
+console.error(erroUpload)
+alert('Erro ao enviar selfie.')
+return
+}
+let {data:publicData}=client.storage.from('clientes').getPublicUrl(path)
+let foto_url=publicData.publicUrl
+let {error:erroUpdate}=await client.from('clientes').update({foto_url}).eq('id',cliente_id)
+if(erroUpdate){
+console.error(erroUpdate)
+alert('Selfie enviada, mas erro ao salvar URL no cliente.')
+return
+}
+if(safe('previewSelfieCliente')){
+safe('previewSelfieCliente').src=foto_url
+safe('previewSelfieCliente').style.display='block'
+}
+alert('Selfie salva com sucesso.')
 await carregarClientesAdmin()
 }
 /*=========================================================
