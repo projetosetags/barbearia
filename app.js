@@ -635,14 +635,23 @@ abrirWhatsapp(a.clientes?.telefone,msg)
 /*=========================================================
 028 GEOLOCALIZACAO CLIENTE
 =========================================================*/
-function obterLocalizacaoCliente(){
+async function obterLocalizacaoCliente(){
 if(!navigator.geolocation)return alert('Geolocalização indisponível')
+let {data:cfg}=await client.from('configuracoes').select('*').limit(1).maybeSingle()
+let endereco=cfg?.endereco||'Rua Coronel Fernandes Martins, 251, Bairro Progresso, Laguna - SC, 88790-000'
 navigator.geolocation.getCurrentPosition(pos=>{
 let lat=pos.coords.latitude
 let lon=pos.coords.longitude
-let destino='Barbearia Leandro David'
-let url=`https://www.google.com/maps/dir/${lat},${lon}/${encodeURIComponent(destino)}`
-safe('geoCliente').innerHTML=`Localização detectada.<br><button onclick="window.open('${url}','_blank')" class="principal">Abrir rota no Google Maps</button>`
+let destino=`L.D Barbearia, ${endereco}`
+let urlCarro=`https://www.google.com/maps/dir/?api=1&origin=${lat},${lon}&destination=${encodeURIComponent(destino)}&travelmode=driving`
+let urlPe=`https://www.google.com/maps/dir/?api=1&origin=${lat},${lon}&destination=${encodeURIComponent(destino)}&travelmode=walking`
+safe('geoCliente').innerHTML=`
+<div class="rotasSalao">
+<p><strong>Localização detectada.</strong></p>
+<button onclick="window.open('${urlCarro}','_blank')" class="principal">Rota de Carro</button>
+<button onclick="window.open('${urlPe}','_blank')" class="principal">Rota a Pé</button>
+</div>
+`
 },()=>alert('Não foi possível obter localização'))
 }
 /*=========================================================
