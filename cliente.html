@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Cliente - Barbearia Leandro David</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=10">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
@@ -13,40 +13,46 @@
 <div class="logoTopo">
 <img src="barbeariald.png" alt="Barbearia Leandro David">
 <div>
-<h1>CLIENTE</h1>
-<p>Agende seu corte ou barba</p>
+<h1>BARBEARIA LEANDRO DAVID</h1>
+<p>Agende seu horário com facilidade</p>
 </div>
 </div>
-<a class="principal linkBotao" href="index.html">Início</a>
 </header>
 <main>
-<section id="viewCliente" class="card">
-<h2>001 APP DO CLIENTE</h2>
-<div class="grid">
-<label>Nome<input id="clienteNome" placeholder="Seu nome"></label>
-<label>WhatsApp<input id="clienteTelefone" placeholder="(00) 00000-0000"></label>
-<label>Serviço<select id="servicoSelect"></select></label>
-<label>Barbeiro<select id="barbeiroSelect"></select></label>
-<label>Data<input id="dataAgendamento" type="date"></label>
-<label>Horário desejado<select id="horaSolicitada"></select></label>
-<label>Selfie do Cliente</label>
-<input id="clienteFoto" type="file" accept="image/*" capture="user">
-<button onclick="enviarSelfieCliente()" class="principal">Enviar Selfie</button>
-<img id="previewSelfieCliente" style="display:none;width:90px;height:90px;border-radius:50%;object-fit:cover;margin-top:10px">
+<section id="viewCliente" class="painelGrupo painelCliente">
+<div class="painelGrupoTitulo">
+<h2>001 PAINEL CLIENTE</h2>
+<p>Informe seus dados, escolha o serviço e acompanhe seu atendimento.</p>
 </div>
+<div class="grid">
+<label>Nome<input id="clienteNome" placeholder="Seu nome completo"></label>
+<label>WhatsApp<input id="clienteTelefone" placeholder="48999999999"></label>
+<label>Barbeiro<select id="barbeiroSelect"></select></label>
+<label>Serviço<select id="servicoSelect"></select></label>
+<label>Data<input id="dataAgendamento" type="date"></label>
+<label>Horário<select id="horaSolicitada"></select></label>
+</div>
+<div class="linhaBotoesCliente">
 <button onclick="solicitarAgendamento()" class="principal">Solicitar Agendamento</button>
-<button onclick="obterLocalizacaoCliente()" class="principal">Ver Tempo até o Salão</button>
-<div id="retornoCliente" class="retorno"></div>
-<div id="geoCliente" class="retorno"></div>
-<h3>002 ACOMPANHAR AGENDAMENTO</h3>
+<button onclick="acompanharCliente()" class="secundario">Acompanhar pelo WhatsApp</button>
+<button onclick="obterLocalizacaoCliente()" class="secundario">Rota até a Barbearia</button>
+</div>
+<div id="retornoCliente" class="retornoCliente"></div>
+<div id="geoCliente"></div>
+</section>
+<section class="painelGrupo">
+<div class="painelGrupoTitulo">
+<h2>002 MEU AGENDAMENTO</h2>
+<p>Acompanhe a confirmação e o tempo previsto para atendimento.</p>
+</div>
 <div class="linhaBusca">
 <input id="telefoneBusca" placeholder="Digite seu WhatsApp para acompanhar">
-<button onclick="acompanharCliente()">Acompanhar</button>
+<button onclick="acompanharCliente()">Buscar</button>
 </div>
 <div id="listaCliente"></div>
 </section>
 </main>
-<script src="supabase.js?v=4"></script>
-<script src="app.js?v=4"></script>
+<script src="supabase.js?v=10"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>
