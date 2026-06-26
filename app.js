@@ -43,6 +43,17 @@ maximumFractionDigits:2
 })
 }
 /*=========================================================
+004C FORMATAR TELEFONE BR
+=========================================================*/
+function telefoneBR(tel){
+let n=String(tel||'').replace(/\D/g,'')
+if(!n)return''
+if(n.startsWith('55'))n=n.slice(2)
+if(n.length===11)return`(${n.slice(0,2)}) ${n.slice(2,3)} ${n.slice(3,7)} ${n.slice(7)}`
+if(n.length===10)return`(${n.slice(0,2)}) ${n.slice(2,6)} ${n.slice(6)}`
+return tel
+}
+/*=========================================================
 005 ALTERNAR PAINEL
 =========================================================*/
 function alternarPainel(){
@@ -442,7 +453,7 @@ safe('painelClientePersonalizado').classList.remove('hidden')
 safe('clientePersonalizadoConteudo').innerHTML='<div class="itemAgenda">Carregando histórico do cliente...</div>'
 let {data=[],error}=await client
 .from('agendamentos')
-.select('*,clientes(nome,telefone),servicos(nome,duracao_minutos,valor),barbeiros(nome)')
+.select('*,clientes(nome,telefone,foto_url,cpf,nascimento,endereco,observacao),servicos(nome,duracao_minutos,valor),barbeiros(nome)')
 .eq('cliente_id',cliente_id)
 .order('data_agendamento',{ascending:false})
 .order('hora_solicitada',{ascending:false})
@@ -554,27 +565,64 @@ let lista=clientePersonalizadoAtual||[]
 if(!lista.length)return alert('Nenhum cliente selecionado para gerar PDF.')
 const {jsPDF}=window.jspdf
 let doc=new jsPDF('p','mm','a4')
+let {data:cfg}=await client.from('configuracoes').select('*').limit(1).maybeSingle()
 let cliente=lista[0].clientes||{}
 let nome=cliente.nome||'Cliente'
-let telefone=cliente.telefone||''
+let telefone=telefoneBR(cliente.telefone||'')
+let cpf=cliente.cpf||''
+let nascimento=cliente.nascimento?dataBR(cliente.nascimento):''
+let endereco=cliente.endereco||''
+let observacao=cliente.observacao||''
 let finalizados=lista.filter(x=>x.status==='finalizado')
 let ativos=lista.filter(x=>['aguardando','aceito','confirmado','proximo','em_atendimento'].includes(x.status))
 let cancelados=lista.filter(x=>['cancelado','recusado','desistente'].includes(x.status)||x.compareceu===false)
 let totalGasto=finalizados.reduce((t,x)=>t+Number(x.valor||0),0)
 let ticketMedio=finalizados.length?totalGasto/finalizados.length:0
+let nomeSalao=cfg?.nome_salao||'BARBEARIA LEANDRO DAVID'
+let telefoneSalao=telefoneBR(cfg?.telefone||'')
+let enderecoSalao=cfg?.endereco||''
+let instagram=cfg?.instagram||''
 let logo=await carregarLogoRelatorio()
+let fotoCliente=await carregarImagemURL(cliente.foto_url)
 doc.setFillColor(8,15,35)
-doc.rect(0,0,210,34,'F')
-if(logo)doc.addImage(logo,'PNG',10,6,22,22)
+doc.rect(0,0,210,38,'F')
+if(logo)doc.addImage(logo,'PNG',10,7,24,24)
 doc.setTextColor(255,255,255)
 doc.setFontSize(16)
 doc.setFont(undefined,'bold')
-doc.text('CLIENTE PERSONALIZADO',logo?36:10,14)
-doc.setFontSize(10)
+doc.text(nomeSalao,logo?38:10,13)
+doc.setFontSize(9)
 doc.setFont(undefined,'normal')
-doc.text('Histórico completo de atendimentos',logo?36:10,21)
-doc.text(`Cliente: ${nome}${telefone?' | WhatsApp: '+telefone:''}`,logo?36:10,28,{maxWidth:160})
-let y=42
+doc.text(`Telefone: ${telefoneSalao||'-'}`,logo?38:10,20)
+doc.text(`Endereço: ${enderecoSalao||'-'}`,logo?38:10,26,{maxWidth:155})
+if(instagram)doc.text(`Instagram: ${instagram}`,logo?38:10,32)
+let y=46
+doc.setTextColor(8,15,35)
+doc.setFontSize(13)
+doc.setFont(undefined,'bold')
+doc.text('CLIENTE PERSONALIZADO',10,y)
+y+=6
+doc.setFillColor(245,247,250)
+doc.roundedRect(10,y,190,34,2,2,'F')
+doc.setDrawColor(210,220,235)
+doc.roundedRect(10,y,190,34,2,2,'S')
+if(fotoCliente){
+doc.addImage(fotoCliente,'JPEG',14,y+5,24,24)
+}
+doc.setTextColor(8,15,35)
+doc.setFontSize(10)
+doc.setFont(undefined,'bold')
+doc.text('DADOS DO CLIENTE',fotoCliente?44:14,y+8)
+doc.setFont(undefined,'normal')
+doc.setFontSize(9)
+doc.text(`Nome completo: ${nome}`,fotoCliente?44:14,y+15)
+doc.text(`Telefone: ${telefone||'-'}`,fotoCliente?44:14,y+21)
+let linhaExtra=[]
+if(cpf)linhaExtra.push(`CPF: ${cpf}`)
+if(nascimento)linhaExtra.push(`Nascimento: ${nascimento}`)
+if(endereco)linhaExtra.push(`Endereço: ${endereco}`)
+doc.text(linhaExtra.join(' | ')||'Demais dados: não informados',fotoCliente?44:14,y+27,{maxWidth:150})
+y+=42
 y=cardsResumoRelatorio(doc,y,[
 ['Registros',lista.length],
 ['Concluídos',finalizados.length],
@@ -583,6 +631,17 @@ y=cardsResumoRelatorio(doc,y,[
 ['Total Gasto','R$ '+moeda(totalGasto)]
 ])
 y+=6
+if(observacao){
+doc.setFillColor(255,248,230)
+doc.roundedRect(10,y,190,13,2,2,'F')
+doc.setTextColor(120,75,0)
+doc.setFontSize(8)
+doc.setFont(undefined,'bold')
+doc.text('Observação:',13,y+5)
+doc.setFont(undefined,'normal')
+doc.text(observacao,34,y+5,{maxWidth:160})
+y+=18
+}
 y=tabelaRelatorioCliente(doc,y,'TRABALHOS CONCLUÍDOS',finalizados,true)
 y=tabelaRelatorioCliente(doc,y,'AGENDADOS / ATIVOS',ativos,false)
 y=tabelaRelatorioCliente(doc,y,'CANCELADOS / DESISTÊNCIAS / NÃO COMPARECEU',cancelados,false)
@@ -599,7 +658,7 @@ doc.setTextColor(0,0,0)
 doc.setFontSize(8)
 doc.setFont(undefined,'normal')
 doc.text(`Emitido em ${new Date().toLocaleString('pt-BR')}`,10,287)
-doc.text('Barbearia Leandro David',155,287)
+doc.text(nomeSalao,150,287)
 let nomeArquivo=nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')
 doc.save(`cliente-personalizado-${nomeArquivo||'cliente'}.pdf`)
 }
@@ -670,6 +729,20 @@ doc.text(`Subtotal concluído: R$ ${moeda(total)}`,12,y+5)
 y+=10
 }
 return y+5
+}
+/*=========================================================
+022J CARREGAR IMAGEM POR URL
+=========================================================*/
+async function carregarImagemURL(url){
+try{
+if(!url)return null
+let r=await fetch(url)
+if(!r.ok)return null
+let blob=await r.blob()
+return await blobParaDataURL(blob)
+}catch(e){
+return null
+}
 }
 /*=========================================================
 023 RECEPCAO
