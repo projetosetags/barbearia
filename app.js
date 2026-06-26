@@ -83,7 +83,12 @@ safe('viewCliente').classList.remove('hidden')
 safe('viewProprietario').classList.add('hidden')
 safe('loginAdmin').classList.add('hidden')
 
-safe('btnPainel').innerText='Painel Proprietário'
+window.scrollTo({
+top:0,
+behavior:'smooth'
+})
+
+return
 }
 }
 /*=========================================================
