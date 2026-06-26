@@ -1,84 +1,72 @@
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Arial,Helvetica,sans-serif;background:#f1f5f9;color:#0f172a}
-.topo{background:#0f172a;color:#fff;padding:15px;display:flex;justify-content:space-between;align-items:center}
-.topo h1{font-size:24px}
-.topo p{font-size:13px;opacity:.8}
-.topo button{background:#22c55e;border:none;color:#fff;padding:10px 15px;border-radius:8px;cursor:pointer}
-main{padding:15px;max-width:1200px;margin:auto}
-.card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.08);margin-bottom:20px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-label{display:flex;flex-direction:column;font-size:13px;font-weight:700}
-input,select{margin-top:5px;padding:10px;border:1px solid #cbd5e1;border-radius:8px}
-.principal{margin-top:15px;background:#2563eb;color:#fff;border:none;padding:12px;border-radius:8px;cursor:pointer;width:100%}
-.retorno{margin-top:15px;padding:10px;border-radius:8px;background:#eff6ff}
-.linhaBusca{display:flex;gap:10px;margin-top:15px}
-.linhaBusca input{flex:1}
-.linhaBusca button{background:#0f172a;color:#fff;border:none;padding:10px 15px;border-radius:8px;cursor:pointer}
-.kpis{margin-bottom:15px}
-.kpis div{background:#f8fafc;border:1px solid #e2e8f0;padding:15px;border-radius:10px;text-align:center}
-.kpis strong{display:block;font-size:28px}
-.kpis span{font-size:12px;color:#64748b}
-.itemAgenda{border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-top:10px;background:#fff}
-.itemAgenda h4{margin-bottom:5px}
-.botoes{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.btnAceitar{background:#16a34a;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
-.btnRecusar{background:#dc2626;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
-.btnAtender{background:#2563eb;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
-.btnFinalizar{background:#7c3aed;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
-.hidden{display:none}
-@media(max-width:768px){
-.topo{flex-direction:column;gap:10px;text-align:center}
-.linhaBusca{flex-direction:column}
-}
-.agendaSemana{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:10px}
-.diaSemana{background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:8px;min-height:180px}
-.diaSemana h4{text-align:center;margin-bottom:8px;font-size:13px}
-.eventoSemana{background:#2563eb;color:#fff;padding:4px 6px;border-radius:6px;font-size:11px;margin-bottom:4px}
-.calendarioSemana{display:grid;grid-template-columns:80px repeat(7,1fr);gap:1px;background:#cbd5e1;margin-top:10px}
-.calHora{background:#fff;padding:6px;font-size:11px;text-align:center}
-.calDia{background:#0f172a;color:#fff;padding:8px;text-align:center;font-weight:700}
-.calCelula{background:#fff;min-height:38px;padding:2px}
-.calEvento{background:#2563eb;color:#fff;font-size:10px;padding:3px;border-radius:4px;overflow:hidden}
-.kpis div{transition:.25s;cursor:pointer;}
-.kpis div:hover{transform:translateY(-3px);box-shadow:0 6px 16px rgba(0,0,0,.15);}
-
-.moduloAdmin{margin-top:15px;border:1px solid #e2e8f0;background:#f8fafc;border-radius:12px;padding:15px}
-.moduloAdmin h3{margin-bottom:10px}
-.moduloAdmin .grid{margin-bottom:10px}
-.moduloAdmin input{background:#fff}
-#listaServicosAdmin,#listaBarbeirosAdmin,#listaClientesAdmin{margin-top:10px}
-.linhaBusca button{background:#0f172a;color:#fff;border:none;padding:10px 15px;border-radius:8px;cursor:pointer}
-.linhaBusca button:hover{opacity:.9}
-
+body{font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#e2e8f0,#f8fafc);color:#0f172a;min-height:100vh}
+.topo{background:linear-gradient(135deg,#020617,#0f172a);color:#fff;padding:16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 25px rgba(0,0,0,.25)}
 .logoTopo{display:flex;align-items:center;gap:12px;min-width:0}
-.logoTopo img{width:52px;height:52px;object-fit:cover;border-radius:50%;border:2px solid #facc15;background:#020617;flex-shrink:0;box-shadow:0 0 0 3px rgba(250,204,21,.12)}
-.logoTopo h1{font-size:22px;line-height:1.05;margin:0;letter-spacing:.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logoTopo img{width:56px;height:56px;object-fit:cover;border-radius:50%;border:2px solid #facc15;background:#020617;flex-shrink:0;box-shadow:0 0 0 4px rgba(250,204,21,.12)}
+.logoTopo h1{font-size:22px;line-height:1.05;margin:0;letter-spacing:.4px}
 .logoTopo p{font-size:12px;margin-top:4px;opacity:.82}
-.linkBotao{text-align:center;text-decoration:none;display:block}
-@media(max-width:768px){
-.topo{padding:8px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.logoTopo{gap:8px}
-.logoTopo img{width:40px;height:40px;border-width:1px;box-shadow:0 0 0 2px rgba(250,204,21,.14)}
-.logoTopo h1{font-size:15px;max-width:190px;white-space:normal;line-height:1.05;margin:0}
-.logoTopo p{font-size:10px;margin-top:2px}
-#btnPainel{padding:7px 9px;font-size:11px;border-radius:8px}
-}
-@media(max-width:390px){
-.logoTopo h1{font-size:14px;max-width:160px}
-.logoTopo p{display:none}
-.logoTopo img{width:36px;height:36px}
-}
-.calDia small{display:block;font-size:11px;font-weight:700;color:#93c5fd;margin-top:2px}
-.tituloAgendaDia{background:#0f172a;color:#fff;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:18px;font-weight:700;text-align:center}
-.calEvento strong{font-weight:900}
-
+main{padding:18px;max-width:1280px;margin:auto}
+.hidden{display:none!important}
+.card,.painelGrupo{background:#fff;border-radius:18px;padding:22px;box-shadow:0 10px 28px rgba(15,23,42,.10);margin-bottom:22px;border:1px solid #e2e8f0}
+.painelGrupoTitulo{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;border-radius:15px;padding:16px 18px;margin-bottom:18px}
+.painelGrupoTitulo h2{font-size:20px;margin-bottom:4px}
+.painelGrupoTitulo p{font-size:13px;color:#cbd5e1}
+.painelCliente{border-top:5px solid #2563eb}
+.painelAdminTopo{border-top:5px solid #facc15}
+.painelFinancas{border-top:5px solid #16a34a}
+h2,h3{margin-bottom:12px}
+h3{margin-top:14px;color:#0f172a}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+label{display:flex;flex-direction:column;font-size:13px;font-weight:800;color:#334155}
+input,select{margin-top:6px;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;font-size:14px}
+input:focus,select:focus{outline:2px solid #93c5fd;border-color:#2563eb}
+button,.linkBotao{font-weight:800}
+.principal,.secundario{margin-top:15px;color:#fff;border:none;padding:13px;border-radius:10px;cursor:pointer;width:100%;text-align:center;text-decoration:none;display:block}
+.principal{background:linear-gradient(135deg,#2563eb,#1d4ed8)}
+.secundario{background:linear-gradient(135deg,#0f172a,#334155)}
+.adminAcesso{background:linear-gradient(135deg,#111827,#020617)}
+.linhaBotoesCliente{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:8px}
+.retornoCliente,.retorno{margin-top:15px;padding:12px;border-radius:10px;background:#eff6ff;color:#1e3a8a;font-weight:800}
+.linhaBusca{display:flex;gap:10px;margin-top:15px;align-items:center}
+.linhaBusca input{flex:1}
+.linhaBusca button{background:#0f172a;color:#fff;border:none;padding:11px 15px;border-radius:10px;cursor:pointer;font-weight:800}
+.kpis{margin-bottom:15px}
+.kpis div{background:linear-gradient(180deg,#f8fafc,#fff);border:1px solid #e2e8f0;padding:16px;border-radius:14px;text-align:center;transition:.25s;cursor:pointer}
+.kpis div:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.14)}
+.kpis strong{display:block;font-size:27px;color:#0f172a}
+.kpis span{font-size:12px;color:#64748b;font-weight:800}
+.itemAgenda{border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-top:10px;background:#fff;box-shadow:0 4px 12px rgba(15,23,42,.06)}
+.itemAgenda h4{margin-bottom:6px}
+.botoes{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.btnAceitar,.btnRecusar,.btnAtender,.btnFinalizar{color:#fff;border:none;padding:9px 13px;border-radius:9px;cursor:pointer;font-weight:800}
+.btnAceitar{background:#16a34a}
+.btnRecusar{background:#dc2626}
+.btnAtender{background:#2563eb}
+.btnFinalizar{background:#7c3aed}
+.tituloAgendaDia{background:#0f172a;color:#fff;padding:12px 14px;border-radius:12px;margin-bottom:12px;font-size:18px;font-weight:900;text-align:center}
+.linhaAgendaAdmin{display:grid;grid-template-columns:80px 1.2fr 150px 1.2fr 120px 150px;gap:8px;align-items:center;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-top:10px;background:#fff;box-shadow:0 4px 12px rgba(15,23,42,.06)}
+.linhaAgendaAdmin div{font-size:13px}
+.linhaAgendaAdmin strong{display:block;color:#0f172a;font-size:14px}
+.linhaAgendaAdminAcoes{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px dashed #cbd5e1}
+.calendarioSemana{display:grid;grid-template-columns:80px repeat(7,1fr);gap:1px;background:#cbd5e1;margin-top:10px;border-radius:14px;overflow:hidden;border:1px solid #cbd5e1}
+.calHora{background:#fff;padding:7px;font-size:11px;text-align:center;font-weight:800}
+.calDia{background:#0f172a;color:#fff;padding:9px;text-align:center;font-weight:900}
+.calDia small{display:block;font-size:11px;font-weight:800;color:#93c5fd;margin-top:2px}
+.calCelula{padding:2px!important;background:#fff!important;min-height:38px}
+.calEvento{display:block!important;width:100%!important;min-height:28px!important;padding:5px!important;border-radius:6px!important;border:0!important;outline:none!important;cursor:pointer!important;text-align:left!important;font-size:12px!important;line-height:1.25!important;font-weight:700!important;color:#fff!important;-webkit-text-fill-color:#fff!important;-webkit-appearance:none!important;appearance:none!important;background:var(--cor-evento,#2563eb)!important;background-color:var(--cor-evento,#2563eb)!important;background-image:none!important;box-shadow:0 1px 3px rgba(0,0,0,.18)!important;transition:none!important}
+.calEvento:hover,.calEvento:focus,.calEvento:active,.calEvento:visited{color:#fff!important;-webkit-text-fill-color:#fff!important;background:var(--cor-evento,#2563eb)!important;background-color:var(--cor-evento,#2563eb)!important;background-image:none!important;outline:none!important}
+.calEvento strong{display:block!important;color:#fff!important;-webkit-text-fill-color:#fff!important;font-weight:700!important}
+.moduloAdmin{margin-top:15px;border:1px solid #e2e8f0;background:#f8fafc;border-radius:14px;padding:16px}
+#listaServicosAdmin,#listaBarbeirosAdmin,#listaClientesAdmin,#painelBarbeiros{margin-top:10px}
 .painelClientePersonalizado{position:fixed;inset:0;background:rgba(2,6,23,.72);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:30px;overflow:auto}
 .painelClientePersonalizado.hidden{display:none}
 .clientePersonalizadoBox{width:min(1100px,96vw);background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:18px}
 .clientePersonalizadoTopo{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0f172a;color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:14px}
 .clientePersonalizadoTopo h2{margin:0;font-size:24px}
 .clientePersonalizadoTopo p{margin:4px 0 0;color:#cbd5e1}
-.clientePersonalizadoTopo button{background:#fff;color:#0f172a;border:0;border-radius:8px;padding:10px 16px;font-weight:800;cursor:pointer}
+.botoesClientePersonalizado{display:flex;gap:10px;align-items:center}
+.botoesClientePersonalizado button{background:#fff;color:#0f172a;border:0;border-radius:8px;padding:10px 16px;font-weight:800;cursor:pointer}
+.botoesClientePersonalizado button:first-child{background:#2563eb;color:#fff}
 .cardsClientePersonalizado{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
 .cardClientePersonalizado{background:#f8fafc;border:1px solid #dbe4f0;border-radius:12px;padding:12px;text-align:center}
 .cardClientePersonalizado strong{display:block;font-size:22px;color:#0f172a}
@@ -88,18 +76,30 @@ input,select{margin-top:5px;padding:10px;border:1px solid #cbd5e1;border-radius:
 .tabelaClientePersonalizado{display:grid;grid-template-columns:90px 70px 1.4fr 1.2fr 1fr 90px;border:1px solid #dbe4f0;border-radius:10px;overflow:hidden}
 .tabelaClientePersonalizado div{padding:9px;border-bottom:1px solid #e5edf7;border-right:1px solid #e5edf7;font-size:13px}
 .tabelaClientePersonalizado .th{background:#e8f0fb;font-weight:900;color:#0f172a}
-.tabelaClientePersonalizado div:nth-last-child(-n+6){border-bottom:0}
 @media(max-width:900px){
 .cardsClientePersonalizado{grid-template-columns:repeat(2,1fr)}
 .tabelaClientePersonalizado{grid-template-columns:1fr}
 .tabelaClientePersonalizado .th{display:none}
+.linhaAgendaAdmin{grid-template-columns:1fr}
+.linhaAgendaAdminAcoes{grid-column:auto}
+.calendarioSemana{font-size:10px;grid-template-columns:52px repeat(7,minmax(70px,1fr));overflow-x:auto}
 }
-.botoesClientePersonalizado{display:flex;gap:10px;align-items:center}
-.botoesClientePersonalizado button{background:#fff;color:#0f172a;border:0;border-radius:8px;padding:10px 16px;font-weight:800;cursor:pointer}
-.botoesClientePersonalizado button:first-child{background:#2563eb;color:#fff}
-
-.calCelula{padding:2px!important;background:#fff!important}
-.calEvento{display:block!important;width:100%!important;min-height:28px!important;padding:5px!important;border-radius:6px!important;border:0!important;outline:none!important;cursor:pointer!important;text-align:left!important;font-size:12px!important;line-height:1.25!important;font-weight:700!important;color:#fff!important;-webkit-text-fill-color:#fff!important;-webkit-appearance:none!important;appearance:none!important;background:var(--cor-evento,#2563eb)!important;background-color:var(--cor-evento,#2563eb)!important;background-image:none!important;box-shadow:0 1px 3px rgba(0,0,0,.18)!important;transition:none!important}
-.calEvento:hover,.calEvento:focus,.calEvento:active,.calEvento:visited{color:#fff!important;-webkit-text-fill-color:#fff!important;background:var(--cor-evento,#2563eb)!important;background-color:var(--cor-evento,#2563eb)!important;background-image:none!important;outline:none!important}
-.calEvento strong{display:block!important;color:#fff!important;-webkit-text-fill-color:#fff!important;font-weight:700!important}
+@media(max-width:768px){
+.topo{padding:10px;display:flex;justify-content:center;align-items:center;text-align:left}
+.logoTopo{gap:8px}
+.logoTopo img{width:42px;height:42px}
+.logoTopo h1{font-size:15px;max-width:250px;line-height:1.05}
+.logoTopo p{font-size:10px}
+main{padding:10px}
+.card,.painelGrupo{padding:14px;border-radius:14px}
+.painelGrupoTitulo{padding:13px;border-radius:12px}
+.linhaBusca{flex-direction:column}
+.linhaBusca button,.linhaBusca input{width:100%}
+.kpis strong{font-size:22px}
+}
+@media(max-width:390px){
+.logoTopo h1{font-size:14px}
+.logoTopo p{display:none}
+.logoTopo img{width:38px;height:38px}
+}
 
