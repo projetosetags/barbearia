@@ -407,11 +407,9 @@ html+=`<div class="calDia"><strong>${dias[d]}</strong><br><small>${dt}</small></
 }
 for(let h=8;h<=20;h++){
 let horarios=[]
-if(h===8){
-horarios.push('08:30')
-}else if(h===20){
-horarios.push('20:00')
-}else{
+if(h===8)horarios.push('08:30')
+else if(h===20)horarios.push('20:00')
+else{
 horarios.push(`${String(h).padStart(2,'0')}:00`)
 horarios.push(`${String(h).padStart(2,'0')}:30`)
 }
@@ -424,9 +422,9 @@ let data=base.toISOString().slice(0,10)
 let evento=lista.find(x=>x.data_agendamento===data&&String(x.hora_solicitada).slice(0,5)===horario)
 let nomeEvento=evento?.clientes?.nome||''
 nomeEvento=nomeEvento.replace(/CLIENTE DESTAQUE\s*[-–]?\s*/gi,'').trim()
-let corEvento=evento?.cor_agenda||'#2563eb'
+let corEvento=corAgendaEvento(evento)
 let clienteId=evento?.cliente_id||''
-html+=`<div class="calCelula">${evento?`<div class="calEvento" style="background:${corEvento}!important;cursor:pointer" onclick="abrirClientePersonalizado('${clienteId}')"><strong>${nomeEvento}</strong></div>`:''}</div>`
+html+=`<div class="calCelula">${evento?`<button type="button" class="calEvento" style="background-color:${corEvento}!important;border-color:${corEvento}!important;color:#fff!important" onclick="abrirClientePersonalizado('${clienteId}')"><strong>${nomeEvento}</strong></button>`:''}</div>`
 }
 }
 }
