@@ -364,7 +364,18 @@ let fim=new Date(inicio)
 fim.setDate(inicio.getDate()+6)
 let dataInicio=inicio.toISOString().slice(0,10)
 let dataFim=fim.toISOString().slice(0,10)
-let {data=[]}=await client.from('agendamentos').select('*,clientes(nome),servicos(nome)').gte('data_agendamento',dataInicio).lte('data_agendamento',dataFim).order('data_agendamento').order('hora_solicitada')
+let {data=[],error}=await client
+.from('agendamentos')
+.select('id,data_agendamento,hora_solicitada,status,cor_agenda,clientes(nome),servicos(nome)')
+.gte('data_agendamento',dataInicio)
+.lte('data_agendamento',dataFim)
+.order('data_agendamento')
+.order('hora_solicitada')
+if(error){
+console.error(error)
+alert('Erro ao carregar agenda semanal')
+return
+}
 renderCalendarioSemanal(data,inicio)
 }
 /*=========================================================
@@ -398,7 +409,10 @@ let base=new Date(inicio)
 base.setDate(inicio.getDate()+d)
 let data=base.toISOString().slice(0,10)
 let evento=lista.find(x=>x.data_agendamento===data&&String(x.hora_solicitada).slice(0,5)===horario)
-html+=`<div class="calCelula">${evento?`<div class="calEvento"><strong>${evento.clientes?.nome||''}</strong></div>`:''}</div>`
+let nomeEvento=evento?.clientes?.nome||''
+nomeEvento=nomeEvento.replace(/CLIENTE DESTAQUE\s*[-–]?\s*/gi,'').trim()
+let corEvento=evento?.cor_agenda||'#2563eb'
+html+=`<div class="calCelula">${evento?`<div class="calEvento" style="background:${corEvento}!important"><strong>${nomeEvento}</strong></div>`:''}</div>`
 }
 }
 }
