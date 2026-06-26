@@ -1452,6 +1452,22 @@ await atualizarAdminPainel()
 }
 }
 /*=========================================================
+055 VOLTAR PAINEL CLIENTE
+=========================================================*/
+function voltarPainelCliente(){
+painelProprietario=false
+localStorage.removeItem('barbearia_admin')
+localStorage.removeItem('barbearia_perfil')
+safe('viewProprietario').classList.add('hidden')
+safe('loginAdmin').classList.add('hidden')
+safe('viewCliente').classList.remove('hidden')
+window.scrollTo({
+top:0,
+behavior:'smooth'
+})
+}
+
+/*=========================================================
 0  service worker
 =========================================================*/
 if('serviceWorker' in navigator){
@@ -1459,3 +1475,4 @@ window.addEventListener('load',()=>{
 navigator.serviceWorker.register('./sw.js')
 })
 }
+
