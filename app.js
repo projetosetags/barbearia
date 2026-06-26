@@ -366,7 +366,7 @@ let dataInicio=inicio.toISOString().slice(0,10)
 let dataFim=fim.toISOString().slice(0,10)
 let {data=[],error}=await client
 .from('agendamentos')
-.select('id,data_agendamento,hora_solicitada,status,cor_agenda,clientes(nome),servicos(nome)')
+.select('id,cliente_id,servico_id,barbeiro_id,data_agendamento,hora_solicitada,hora_prevista,status,valor,compareceu,cor_agenda,clientes(nome,telefone),servicos(nome,duracao_minutos,valor),barbeiros(nome)')
 .gte('data_agendamento',dataInicio)
 .lte('data_agendamento',dataFim)
 .order('data_agendamento')
@@ -412,13 +412,139 @@ let evento=lista.find(x=>x.data_agendamento===data&&String(x.hora_solicitada).sl
 let nomeEvento=evento?.clientes?.nome||''
 nomeEvento=nomeEvento.replace(/CLIENTE DESTAQUE\s*[-–]?\s*/gi,'').trim()
 let corEvento=evento?.cor_agenda||'#2563eb'
-html+=`<div class="calCelula">${evento?`<div class="calEvento" style="background:${corEvento}!important"><strong>${nomeEvento}</strong></div>`:''}</div>`
+let clienteId=evento?.cliente_id||''
+html+=`<div class="calCelula">${evento?`<div class="calEvento" style="background:${corEvento}!important;cursor:pointer" onclick="abrirClientePersonalizado('${clienteId}')"><strong>${nomeEvento}</strong></div>`:''}</div>`
 }
 }
 }
 html+='</div>'
 safe('calendarioSemanal').innerHTML=html
 }
+/*=========================================================
+022A GARANTIR PAINEL CLIENTE PERSONALIZADO
+=========================================================*/
+function garantirPainelClientePersonalizado(){
+if(safe('painelClientePersonalizado'))return
+let div=document.createElement('div')
+div.id='painelClientePersonalizado'
+div.className='painelClientePersonalizado hidden'
+div.innerHTML=`<div class="clientePersonalizadoBox"><div class="clientePersonalizadoTopo"><div><h2>Cliente Personalizado</h2><p id="clientePersonalizadoSub">Histórico completo do cliente</p></div><button onclick="fecharClientePersonalizado()">Fechar</button></div><div id="clientePersonalizadoConteudo"></div></div>`
+document.body.appendChild(div)
+}
+/*=========================================================
+022B ABRIR CLIENTE PERSONALIZADO
+=========================================================*/
+async function abrirClientePersonalizado(cliente_id){
+if(!cliente_id)return
+garantirPainelClientePersonalizado()
+safe('painelClientePersonalizado').classList.remove('hidden')
+safe('clientePersonalizadoConteudo').innerHTML='<div class="itemAgenda">Carregando histórico do cliente...</div>'
+let {data=[],error}=await client
+.from('agendamentos')
+.select('*,clientes(nome,telefone),servicos(nome,duracao_minutos,valor),barbeiros(nome)')
+.eq('cliente_id',cliente_id)
+.order('data_agendamento',{ascending:false})
+.order('hora_solicitada',{ascending:false})
+if(error){
+console.error(error)
+safe('clientePersonalizadoConteudo').innerHTML='<div class="itemAgenda">Erro ao carregar histórico do cliente.</div>'
+return
+}
+renderClientePersonalizado(data||[])
+}
+/*=========================================================
+022C RENDER CLIENTE PERSONALIZADO
+=========================================================*/
+function renderClientePersonalizado(lista){
+if(!lista.length){
+safe('clientePersonalizadoConteudo').innerHTML='<div class="itemAgenda">Nenhum atendimento encontrado para este cliente.</div>'
+return
+}
+let cliente=lista[0].clientes||{}
+let nome=cliente.nome||'Cliente'
+let telefone=cliente.telefone||''
+let finalizados=lista.filter(x=>x.status==='finalizado')
+let ativos=lista.filter(x=>['aguardando','aceito','confirmado','proximo','em_atendimento'].includes(x.status))
+let cancelados=lista.filter(x=>['cancelado','recusado','desistente'].includes(x.status)||x.compareceu===false)
+let totalGasto=finalizados.reduce((t,x)=>t+Number(x.valor||0),0)
+let ticketMedio=finalizados.length?totalGasto/finalizados.length:0
+let ultimo=lista[0]
+safe('clientePersonalizadoSub').innerText=`${nome}${telefone?' | '+telefone:''}`
+let html=''
+html+='<div class="cardsClientePersonalizado">'
+html+=cardClientePersonalizado('Total de Registros',lista.length)
+html+=cardClientePersonalizado('Concluídos',finalizados.length)
+html+=cardClientePersonalizado('Agendados/Ativos',ativos.length)
+html+=cardClientePersonalizado('Cancelados/Desistências',cancelados.length)
+html+=cardClientePersonalizado('Total Gasto','R$ '+moeda(totalGasto))
+html+=cardClientePersonalizado('Ticket Médio','R$ '+moeda(ticketMedio))
+html+='</div>'
+html+='<div class="itemAgenda">'
+html+=`<h4>Resumo do Cliente</h4>`
+html+=`<p><strong>Nome:</strong> ${nome}</p>`
+html+=`<p><strong>WhatsApp:</strong> ${telefone||'-'}</p>`
+html+=`<p><strong>Último registro:</strong> ${dataBR(ultimo.data_agendamento)} às ${formatarHora(ultimo.hora_solicitada)}</p>`
+html+=`<p><strong>Último serviço:</strong> ${ultimo.servicos?.nome||'-'}</p>`
+html+=`<p><strong>Último barbeiro:</strong> ${ultimo.barbeiros?.nome||'-'}</p>`
+html+='</div>'
+html+=tabelaClientePersonalizado('TRABALHOS CONCLUÍDOS',finalizados)
+html+=tabelaClientePersonalizado('AGENDADOS / EM ATENDIMENTO / AGUARDANDO',ativos)
+html+=tabelaClientePersonalizado('CANCELADOS / RECUSADOS / DESISTÊNCIAS / NÃO COMPARECEU',cancelados)
+let demais=lista.filter(x=>!finalizados.includes(x)&&!ativos.includes(x)&&!cancelados.includes(x))
+if(demais.length)html+=tabelaClientePersonalizado('DEMAIS SITUAÇÕES',demais)
+safe('clientePersonalizadoConteudo').innerHTML=html
+}
+/*=========================================================
+022D CARD CLIENTE PERSONALIZADO
+=========================================================*/
+function cardClientePersonalizado(titulo,valor){
+return `<div class="cardClientePersonalizado"><strong>${valor}</strong><span>${titulo}</span></div>`
+}
+/*=========================================================
+022E TABELA CLIENTE PERSONALIZADO
+=========================================================*/
+function tabelaClientePersonalizado(titulo,lista){
+let html=`<div class="blocoClientePersonalizado"><h3>${titulo}</h3>`
+if(!lista.length){
+html+='<div class="itemAgenda">Nenhum registro.</div></div>'
+return html
+}
+html+='<div class="tabelaClientePersonalizado">'
+html+='<div class="th">Data</div><div class="th">Hora</div><div class="th">Serviço</div><div class="th">Barbeiro</div><div class="th">Situação</div><div class="th">Valor</div>'
+lista.forEach(a=>{
+html+=`<div>${dataBR(a.data_agendamento)}</div>`
+html+=`<div>${formatarHora(a.hora_solicitada)}</div>`
+html+=`<div>${a.servicos?.nome||'-'}</div>`
+html+=`<div>${a.barbeiros?.nome||'-'}</div>`
+html+=`<div>${textoStatusClientePersonalizado(a)}</div>`
+html+=`<div>R$ ${moeda(a.valor)}</div>`
+})
+html+='</div></div>'
+return html
+}
+/*=========================================================
+022F STATUS CLIENTE PERSONALIZADO
+=========================================================*/
+function textoStatusClientePersonalizado(a){
+if(a.compareceu===false)return'Não compareceu'
+if(a.status==='em_atendimento')return'Em atendimento'
+if(a.status==='finalizado')return'Finalizado'
+if(a.status==='aguardando')return'Aguardando'
+if(a.status==='aceito')return'Aceito'
+if(a.status==='confirmado')return'Confirmado'
+if(a.status==='proximo')return'Próximo'
+if(a.status==='cancelado')return'Cancelado'
+if(a.status==='recusado')return'Recusado'
+if(a.status==='desistente')return'Desistente'
+return a.status||'-'
+}
+/*=========================================================
+022G FECHAR CLIENTE PERSONALIZADO
+=========================================================*/
+function fecharClientePersonalizado(){
+if(safe('painelClientePersonalizado'))safe('painelClientePersonalizado').classList.add('hidden')
+}
+
 /*=========================================================
 023 RECEPCAO
 =========================================================*/
