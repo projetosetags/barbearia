@@ -3,6 +3,7 @@
 =========================================================*/
 let painelProprietario=false
 let servicosCache=[]
+let clientePersonalizadoAtual=[]
 /*=========================================================
 002 SAFE
 =========================================================*/
@@ -428,7 +429,7 @@ if(safe('painelClientePersonalizado'))return
 let div=document.createElement('div')
 div.id='painelClientePersonalizado'
 div.className='painelClientePersonalizado hidden'
-div.innerHTML=`<div class="clientePersonalizadoBox"><div class="clientePersonalizadoTopo"><div><h2>Cliente Personalizado</h2><p id="clientePersonalizadoSub">Histórico completo do cliente</p></div><button onclick="fecharClientePersonalizado()">Fechar</button></div><div id="clientePersonalizadoConteudo"></div></div>`
+div.innerHTML=`<div class="clientePersonalizadoBox"><div class="clientePersonalizadoTopo"><div><h2>Cliente Personalizado</h2><p id="clientePersonalizadoSub">Histórico completo do cliente</p></div><div class="botoesClientePersonalizado"><button onclick="gerarPDFClientePersonalizado()">Imprimir PDF</button><button onclick="fecharClientePersonalizado()">Fechar</button></div></div><div id="clientePersonalizadoConteudo"></div></div>`
 document.body.appendChild(div)
 }
 /*=========================================================
@@ -456,6 +457,7 @@ renderClientePersonalizado(data||[])
 022C RENDER CLIENTE PERSONALIZADO
 =========================================================*/
 function renderClientePersonalizado(lista){
+clientePersonalizadoAtual=lista||[]
 if(!lista.length){
 safe('clientePersonalizadoConteudo').innerHTML='<div class="itemAgenda">Nenhum atendimento encontrado para este cliente.</div>'
 return
@@ -544,7 +546,131 @@ return a.status||'-'
 function fecharClientePersonalizado(){
 if(safe('painelClientePersonalizado'))safe('painelClientePersonalizado').classList.add('hidden')
 }
-
+/*=========================================================
+022H GERAR PDF CLIENTE PERSONALIZADO
+=========================================================*/
+async function gerarPDFClientePersonalizado(){
+let lista=clientePersonalizadoAtual||[]
+if(!lista.length)return alert('Nenhum cliente selecionado para gerar PDF.')
+const {jsPDF}=window.jspdf
+let doc=new jsPDF('p','mm','a4')
+let cliente=lista[0].clientes||{}
+let nome=cliente.nome||'Cliente'
+let telefone=cliente.telefone||''
+let finalizados=lista.filter(x=>x.status==='finalizado')
+let ativos=lista.filter(x=>['aguardando','aceito','confirmado','proximo','em_atendimento'].includes(x.status))
+let cancelados=lista.filter(x=>['cancelado','recusado','desistente'].includes(x.status)||x.compareceu===false)
+let totalGasto=finalizados.reduce((t,x)=>t+Number(x.valor||0),0)
+let ticketMedio=finalizados.length?totalGasto/finalizados.length:0
+let logo=await carregarLogoRelatorio()
+doc.setFillColor(8,15,35)
+doc.rect(0,0,210,34,'F')
+if(logo)doc.addImage(logo,'PNG',10,6,22,22)
+doc.setTextColor(255,255,255)
+doc.setFontSize(16)
+doc.setFont(undefined,'bold')
+doc.text('CLIENTE PERSONALIZADO',logo?36:10,14)
+doc.setFontSize(10)
+doc.setFont(undefined,'normal')
+doc.text('Histórico completo de atendimentos',logo?36:10,21)
+doc.text(`Cliente: ${nome}${telefone?' | WhatsApp: '+telefone:''}`,logo?36:10,28,{maxWidth:160})
+let y=42
+y=cardsResumoRelatorio(doc,y,[
+['Registros',lista.length],
+['Concluídos',finalizados.length],
+['Ativos',ativos.length],
+['Cancelados',cancelados.length],
+['Total Gasto','R$ '+moeda(totalGasto)]
+])
+y+=6
+y=tabelaRelatorioCliente(doc,y,'TRABALHOS CONCLUÍDOS',finalizados,true)
+y=tabelaRelatorioCliente(doc,y,'AGENDADOS / ATIVOS',ativos,false)
+y=tabelaRelatorioCliente(doc,y,'CANCELADOS / DESISTÊNCIAS / NÃO COMPARECEU',cancelados,false)
+let demais=lista.filter(x=>!finalizados.includes(x)&&!ativos.includes(x)&&!cancelados.includes(x))
+if(demais.length)y=tabelaRelatorioCliente(doc,y,'DEMAIS SITUAÇÕES',demais,false)
+if(y>250){doc.addPage();y=15}
+doc.setFillColor(8,15,35)
+doc.rect(10,y,190,12,'F')
+doc.setTextColor(255,255,255)
+doc.setFontSize(10)
+doc.setFont(undefined,'bold')
+doc.text(`TOTAL GASTO: R$ ${moeda(totalGasto)} | TICKET MÉDIO: R$ ${moeda(ticketMedio)}`,14,y+8)
+doc.setTextColor(0,0,0)
+doc.setFontSize(8)
+doc.setFont(undefined,'normal')
+doc.text(`Emitido em ${new Date().toLocaleString('pt-BR')}`,10,287)
+doc.text('Barbearia Leandro David',155,287)
+let nomeArquivo=nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')
+doc.save(`cliente-personalizado-${nomeArquivo||'cliente'}.pdf`)
+}
+/*=========================================================
+022I TABELA PDF CLIENTE PERSONALIZADO
+=========================================================*/
+function tabelaRelatorioCliente(doc,y,titulo,lista,mostrarTotal){
+if(y>245){doc.addPage();y=15}
+doc.setFillColor(8,15,35)
+doc.rect(10,y,190,9,'F')
+doc.setTextColor(255,255,255)
+doc.setFontSize(10)
+doc.setFont(undefined,'bold')
+doc.text(titulo,12,y+6)
+y+=11
+if(!lista.length){
+doc.setTextColor(90,90,90)
+doc.setFontSize(9)
+doc.setFont(undefined,'normal')
+doc.text('Nenhum registro encontrado.',12,y+5)
+return y+12
+}
+let colunas=[
+{t:'Data',x:10,w:24},
+{t:'Hora',x:34,w:18},
+{t:'Serviço',x:52,w:45},
+{t:'Barbeiro',x:97,w:38},
+{t:'Situação',x:135,w:35},
+{t:'Valor',x:170,w:30}
+]
+doc.setFillColor(225,232,242)
+doc.rect(10,y,190,8,'F')
+doc.setTextColor(8,15,35)
+doc.setFontSize(8)
+doc.setFont(undefined,'bold')
+colunas.forEach(c=>doc.text(c.t,c.x+1,y+5))
+y+=8
+doc.setFont(undefined,'normal')
+lista.forEach((a,i)=>{
+if(y>275){doc.addPage();y=15}
+let cor=i%2===0?250:242
+doc.setFillColor(cor,cor,cor)
+doc.rect(10,y,190,8,'F')
+doc.setTextColor(0,0,0)
+doc.setFontSize(7)
+let linha=[
+dataBR(a.data_agendamento),
+formatarHora(a.hora_solicitada),
+a.servicos?.nome||'-',
+a.barbeiros?.nome||'-',
+textoStatusClientePersonalizado(a),
+'R$ '+moeda(a.valor)
+]
+colunas.forEach((c,idx)=>{
+let txt=String(linha[idx]||'')
+doc.text(txt,c.x+1,y+5,{maxWidth:c.w-2})
+})
+y+=8
+})
+if(mostrarTotal){
+let total=lista.reduce((t,a)=>t+Number(a.valor||0),0)
+doc.setFillColor(235,247,238)
+doc.rect(10,y,190,8,'F')
+doc.setTextColor(8,80,35)
+doc.setFontSize(8)
+doc.setFont(undefined,'bold')
+doc.text(`Subtotal concluído: R$ ${moeda(total)}`,12,y+5)
+y+=10
+}
+return y+5
+}
 /*=========================================================
 023 RECEPCAO
 =========================================================*/
