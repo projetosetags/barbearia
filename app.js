@@ -413,9 +413,9 @@ async function carregarAgendaSemanal(){
 let dataBase=safe('dataPainel')?.value||dataHoje()
 let base=new Date(dataBase+'T00:00:00')
 let inicio=new Date(base)
-inicio.setDate(base.getDate()-base.getDay())
-let fim=new Date(inicio)
-fim.setDate(inicio.getDate()+6)
+inicio.setDate(base.getDate()-1)
+let fim=new Date(base)
+fim.setDate(base.getDate()+6)
 let dataInicio=inicio.toISOString().slice(0,10)
 let dataFim=fim.toISOString().slice(0,10)
 let {data=[],error}=await client
