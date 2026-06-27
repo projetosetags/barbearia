@@ -97,7 +97,16 @@ return
 async function carregarServicos(){
 let {data,error}=await client.from('servicos').select('*').eq('ativo',true).order('nome')
 if(error)return alert('Erro ao carregar serviços')
-servicosCache=data||[]
+let ordem={'corte masculino':1,'corte':1,'barba':2,'combo':3,'cabelo e barba':3,'corte e barba':3}
+servicosCache=(data||[]).sort((a,b)=>{
+let na=String(a.nome||'').toLowerCase()
+let nb=String(b.nome||'').toLowerCase()
+let oa=99
+let ob=99
+Object.keys(ordem).forEach(k=>{if(na.includes(k))oa=Math.min(oa,ordem[k]);if(nb.includes(k))ob=Math.min(ob,ordem[k])})
+if(oa!==ob)return oa-ob
+return na.localeCompare(nb)
+})
 if(safe('servicoSelect')){
 safe('servicoSelect').innerHTML=servicosCache.map(s=>`<option value="${s.id}">${s.nome} - ${s.duracao_minutos} min - R$ ${moeda(s.valor)}</option>`).join('')
 }
@@ -123,22 +132,23 @@ let servico_id=safe('servicoSelect').value
 let data_agendamento=safe('dataAgendamento').value
 let hora_solicitada=safe('horaSolicitada').value
 if(!nome||!telefone||!servico_id||!data_agendamento||!hora_solicitada)return alert('Preencha todos os campos')
-let {data:cli,error:erroCli}=await client.from('clientes').insert({nome,telefone}).select().single()
-if(erroCli)return alert('Erro ao cadastrar cliente')
+let telLimpo=telefone.replace(/\D/g,'')
+let {data:jaExiste=[]}=await client.from('agendamentos').select('id,status,clientes!inner(telefone)').eq('data_agendamento',data_agendamento).eq('clientes.telefone',telefone).in('status',['aguardando','aceito','confirmado','proximo','em_atendimento'])
+if(jaExiste.length)return alert('Você já possui agendamento ativo neste dia. Acompanhe seu horário pelo WhatsApp.')
+let {data:cliExistente}=await client.from('clientes').select('*').eq('telefone',telefone).maybeSingle()
+let cli=cliExistente
+if(!cli){
+let r=await client.from('clientes').insert({nome,telefone}).select().single()
+if(r.error)return alert('Erro ao cadastrar cliente')
+cli=r.data
+}else{
+await client.from('clientes').update({nome}).eq('id',cli.id)
+}
 let servico=servicosCache.find(x=>x.id===servico_id)
 let valor=Number(servico?.valor||0)
-
-let {error}=await client.from('agendamentos').insert({
-cliente_id:cli.id,
-barbeiro_id,
-servico_id,
-data_agendamento,
-hora_solicitada,
-valor,
-status:'aguardando'
-})
+let {error}=await client.from('agendamentos').insert({cliente_id:cli.id,barbeiro_id,servico_id,data_agendamento,hora_solicitada,valor,status:'aguardando'})
 if(error)return alert('Erro ao solicitar agendamento')
-safe('retornoCliente').innerHTML='Solicitação enviada. Aguarde o aceite do salão.'
+safe('retornoCliente').innerHTML='Solicitação enviada. Aguarde o aceite da barbearia.'
 await gerarHorarios()
 safe('telefoneBusca').value=telefone
 acompanharCliente()
@@ -221,7 +231,17 @@ if(!lista.length){
 safe('listaPainel').innerHTML=`<div class="tituloAgendaDia">AGENDAMENTOS DO DIA ${dataSelecionada}</div><div class="itemAgenda">Nenhum agendamento para esta data.</div>`
 return
 }
-safe('listaPainel').innerHTML=`<div class="tituloAgendaDia">AGENDAMENTOS DO DIA ${dataSelecionada}</div>`+lista.map(a=>`<div class="itemAgenda"><h4>${formatarHora(a.hora_solicitada)} - ${a.clientes?.nome||''}</h4><p>WhatsApp: ${a.clientes?.telefone||''}</p><p>Serviço: ${a.servicos?.nome||''} - ${a.servicos?.duracao_minutos||0} min</p><p>Status: <strong>${a.status}</strong></p><p>Horário previsto: ${formatarHora(a.hora_prevista)||'não definido'}</p><div class="botoes">${botoesPainel(a)}</div></div>`).join('')
+safe('listaPainel').innerHTML=`<div class="tituloAgendaDia">AGENDAMENTOS DO DIA ${dataSelecionada}</div>`+lista.map(a=>`
+<div class="linhaAgendaAdmin">
+<div><strong>Horário</strong>${formatarHora(a.hora_solicitada)}</div>
+<div><strong>Nome</strong>${a.clientes?.nome||''}</div>
+<div><strong>WhatsApp</strong>${telefoneBR(a.clientes?.telefone||'')}</div>
+<div><strong>Serviço</strong>${a.servicos?.nome||''}</div>
+<div><strong>Status</strong>${a.status}</div>
+<div><strong>Previsto</strong>${formatarHora(a.hora_prevista)||'aguardando'}</div>
+<div class="linhaAgendaAdminAcoes">${botoesPainel(a)}</div>
+</div>
+`).join('')
 }
 /*=========================================================
 013 BOTÕES PAINEL
@@ -231,7 +251,7 @@ let html=''
 if(a.status==='aguardando')html+=`<button class="btnAceitar" onclick="aceitarAgendamento('${a.id}')">Aceitar</button><button class="btnRecusar" onclick="alterarStatus('${a.id}','recusado')">Recusar</button>`
 if(a.status==='aceito'||a.status==='confirmado'||a.status==='proximo')html+=`<button class="btnAtender" onclick="alterarStatus('${a.id}','em_atendimento')">Iniciar</button>`
 if(a.status==='em_atendimento')html+=`<button class="btnFinalizar" onclick="alterarStatus('${a.id}','finalizado')">Finalizar</button>`
-html+=`<button class="btnAtender" onclick="whatsappCliente('${a.id}')">WhatsApp</button>`
+html+=`<button class="btnAtender" onclick="whatsappCliente('${a.id}')">Confirmar via WhatsApp</button>`
 return html
 }
 /*=========================================================
@@ -306,6 +326,8 @@ if(safe('barbeiroSelect'))await carregarBarbeiros()
 if(safe('horaSolicitada'))await gerarHorarios()
 if(safe('dataAgendamento'))safe('dataAgendamento').addEventListener('change',gerarHorarios)
 if(safe('barbeiroSelect'))safe('barbeiroSelect').addEventListener('change',gerarHorarios)
+if(safe('clienteTelefone'))safe('clienteTelefone').addEventListener('change',gerarHorarios)
+if(safe('clienteTelefone'))safe('clienteTelefone').addEventListener('blur',gerarHorarios)
 if(typeof protegerAdmin==='function')await protegerAdmin()
 setInterval(()=>{if(safe('recepcaoFila'))carregarRecepcao()},10000)
 setInterval(()=>{if(safe('listaPainel'))carregarPainel()},30000)
@@ -316,6 +338,14 @@ setInterval(()=>{if(safe('listaPainel'))carregarPainel()},30000)
 async function gerarHorarios(){
 let data=safe('dataAgendamento').value||dataHoje()
 let barbeiro_id=safe('barbeiroSelect')?.value||''
+let telefone=safe('clienteTelefone')?.value?.trim()||''
+if(telefone){
+let {data:jaExiste=[]}=await client.from('agendamentos').select('id,clientes!inner(telefone)').eq('data_agendamento',data).eq('clientes.telefone',telefone).in('status',['aguardando','aceito','confirmado','proximo','em_atendimento'])
+if(jaExiste.length){
+safe('horaSolicitada').innerHTML='<option value="">Você já tem agendamento neste dia</option>'
+return
+}
+}
 let {data:agenda=[]}=await client.from('agendamentos').select('hora_solicitada,status,barbeiro_id').eq('data_agendamento',data).eq('barbeiro_id',barbeiro_id).neq('status','cancelado')
 let ocupados=agenda.map(a=>String(a.hora_solicitada).slice(0,5))
 let html=''
@@ -335,7 +365,7 @@ let hora='20:00'
 if(!ocupados.includes(hora))html+=`<option value="${hora}">${hora}</option>`
 }
 }
-safe('horaSolicitada').innerHTML=html
+safe('horaSolicitada').innerHTML=html||'<option value="">Sem horários disponíveis</option>'
 }
 /*=========================================================
 020 LOGIN ADMIN
@@ -783,6 +813,7 @@ return null
 =========================================================*/
 function corAgendaEvento(evento){
 if(!evento)return'#2563eb'
+if(evento.cor_agenda)return evento.cor_agenda
 let cores=['#dc2626','#ea580c','#d97706','#16a34a','#059669','#0f766e','#0891b2','#0284c7','#2563eb','#4f46e5','#7c3aed','#9333ea','#be185d','#9f1239','#65a30d','#15803d']
 let chave=String(evento.cliente_id||evento.id||evento.clientes?.nome||'')
 let soma=0
@@ -1494,8 +1525,8 @@ behavior:'smooth'
 if('serviceWorker' in navigator){
 window.addEventListener('load',async()=>{
 let regs=await navigator.serviceWorker.getRegistrations()
-for(let reg of regs){await reg.unregister()}
-navigator.serviceWorker.register('./sw.js?v=2')
+for(let reg of regs)await reg.unregister()
+navigator.serviceWorker.register('./sw.js?v=10')
 })
 }
 
