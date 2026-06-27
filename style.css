@@ -156,3 +156,14 @@ user-select:none;
 @media(max-width:600px){.gridConfigBarbearia{grid-template-columns:1fr}}
 .hojeAgenda{background:#16a34a!important;color:#fff!important}
 .hojeAgenda small{color:#dcfce7!important}
+.tabelaRecepcao{display:grid;grid-template-columns:70px 1.2fr 130px 1.2fr 1fr 100px 1.5fr;border:1px solid #cbd5e1;border-radius:14px;overflow:hidden;background:#fff}
+.tabelaRecepcao div{padding:10px;border-bottom:1px solid #e2e8f0;border-right:1px solid #e2e8f0;font-size:13px}
+.tabelaRecepcao .th{background:#0f172a;color:#fff;font-weight:900;text-align:center}
+.acoesTabela{display:flex!important;gap:6px;flex-wrap:wrap}
+.acoesTabela button{font-size:11px;padding:7px 9px}
+@media(max-width:900px){
+.tabelaRecepcao{display:block}
+.tabelaRecepcao .th{display:none}
+.tabelaRecepcao div{border-right:0}
+.acoesTabela{border-bottom:6px solid #e2e8f0}
+}
