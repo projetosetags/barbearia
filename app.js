@@ -326,6 +326,7 @@ if(safe('barbeiroSelect'))await carregarBarbeiros()
 if(safe('horaSolicitada'))await gerarHorarios()
 if(safe('dataAgendamento'))safe('dataAgendamento').addEventListener('change',gerarHorarios)
 if(safe('barbeiroSelect'))safe('barbeiroSelect').addEventListener('change',gerarHorarios)
+if(safe('clienteTelefone'))safe('clienteTelefone').addEventListener('input',mascaraWhatsappCliente)
 if(safe('clienteTelefone'))safe('clienteTelefone').addEventListener('change',gerarHorarios)
 if(safe('clienteTelefone'))safe('clienteTelefone').addEventListener('blur',gerarHorarios)
 if(typeof protegerAdmin==='function')await protegerAdmin()
@@ -1517,6 +1518,20 @@ window.scrollTo({
 top:0,
 behavior:'smooth'
 })
+}
+/*=========================================================
+056 MASCARA WHATSAPP CLIENTE
+=========================================================*/
+function mascaraWhatsappCliente(){
+let el=safe('clienteTelefone')
+if(!el)return
+let n=el.value.replace(/\D/g,'')
+if(n.startsWith('55'))n=n.slice(2)
+if(n.length>11)n=n.slice(0,11)
+if(n.length<=2)el.value=n
+else if(n.length<=3)el.value=`(${n.slice(0,2)}) ${n.slice(2)}`
+else if(n.length<=7)el.value=`(${n.slice(0,2)}) ${n.slice(2,3)} ${n.slice(3)}`
+else el.value=`(${n.slice(0,2)}) ${n.slice(2,3)} ${n.slice(3,7)} ${n.slice(7)}`
 }
 
 /*=========================================================
