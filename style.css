@@ -119,3 +119,33 @@ user-select:none;
 .rodapePainel a{color:#94a3b8;text-decoration:none;}
 .rodapePainel a:hover{color:#64748b;}
 
+.gridClienteAgendamento{display:grid;grid-template-columns:1.35fr 1fr 1fr 1.45fr .85fr .75fr;gap:12px;align-items:end}
+.gridClienteAgendamento label{min-width:0}
+.gridClienteAgendamento input,.gridClienteAgendamento select{width:100%;height:46px;font-size:15px}
+.campoServico select{font-size:14px;white-space:normal;overflow:visible;text-overflow:clip}
+@media(max-width:900px){
+.gridClienteAgendamento{grid-template-columns:1fr 1fr}
+.campoNome,.campoServico{grid-column:1/-1}
+}
+@media(max-width:600px){
+.gridClienteAgendamento{grid-template-columns:1fr}
+.campoNome,.campoWhatsapp,.campoBarbeiro,.campoServico,.campoData,.campoHora{grid-column:auto}
+}
+@media(max-width:768px){
+.calendarioSemana{grid-template-columns:42px repeat(7,minmax(38px,1fr))!important;width:100%!important;min-width:0!important;gap:1px!important}
+.calDia{padding:6px 2px!important;font-size:11px!important}
+.calDia small{font-size:10px!important}
+.calHora{padding:6px 2px!important;font-size:10px!important}
+.calCelula{padding:1px!important;min-height:32px!important}
+.calEvento{min-height:28px!important;padding:3px 2px!important;border-radius:5px!important;font-size:9px!important;line-height:1.05!important;letter-spacing:-.2px!important;word-break:break-word!important;overflow:hidden!important}
+.calEvento strong{font-size:9px!important;line-height:1.05!important;word-break:break-word!important}
+.painelGrupo{overflow:hidden!important}
+}
+@media(max-width:430px){
+.calendarioSemana{grid-template-columns:38px repeat(7,minmax(38px,1fr))!important}
+.calDia{font-size:10px!important}
+.calDia small{font-size:9px!important}
+.calHora{font-size:9px!important}
+.calEvento{font-size:8.5px!important;padding:3px 1px!important}
+.calEvento strong{font-size:8.5px!important}
+}
