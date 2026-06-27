@@ -349,6 +349,7 @@ if(safe('barbeiroSelect'))safe('barbeiroSelect').addEventListener('change',gerar
 if(safe('clienteTelefone'))safe('clienteTelefone').addEventListener('input',mascaraWhatsappCliente)
 if(safe('clienteTelefone'))safe('clienteTelefone').addEventListener('change',gerarHorarios)
 if(safe('clienteTelefone'))safe('clienteTelefone').addEventListener('blur',gerarHorarios)
+if(safe('cfgTelefone'))safe('cfgTelefone').addEventListener('input',mascaraWhatsappConfig)
 if(typeof protegerAdmin==='function')await protegerAdmin()
 setInterval(()=>{if(safe('recepcaoFila'))carregarRecepcao()},10000)
 setInterval(()=>{if(safe('listaPainel'))carregarPainel()},30000)
@@ -1590,6 +1591,20 @@ Muito obrigado pela preferência!
 Esperamos revê-lo em breve.
 Se gostou do atendimento, indique nossa barbearia para um amigo.`
 abrirWhatsapp(a.clientes?.telefone,msg)
+}
+/*=========================================================
+059 MASCARA WHATSAPP CONFIG
+=========================================================*/
+function mascaraWhatsappConfig(){
+let el=safe('cfgTelefone')
+if(!el)return
+let n=el.value.replace(/\D/g,'')
+if(n.startsWith('55'))n=n.slice(2)
+if(n.length>11)n=n.slice(0,11)
+if(n.length<=2)el.value=n
+else if(n.length<=3)el.value=`(${n.slice(0,2)}) ${n.slice(2)}`
+else if(n.length<=7)el.value=`(${n.slice(0,2)}) ${n.slice(2,3)} ${n.slice(3)}`
+else el.value=`(${n.slice(0,2)}) ${n.slice(2,3)} ${n.slice(3,7)} ${n.slice(7)}`
 }
 /*=========================================================
 0 SERVICE WORKER
