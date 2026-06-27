@@ -24,13 +24,13 @@
 <h2>001 PAINEL CLIENTE</h2>
 <p>Informe seus dados, escolha o serviço e acompanhe seu atendimento.</p>
 </div>
-<div class="grid">
-<label>Nome<input id="clienteNome" placeholder="Seu nome completo"></label>
-<label>WhatsApp<input id="clienteTelefone" placeholder="48999999999"></label>
-<label>Barbeiro<select id="barbeiroSelect"></select></label>
-<label>Serviço<select id="servicoSelect"></select></label>
-<label>Data<input id="dataAgendamento" type="date"></label>
-<label>Horário<select id="horaSolicitada"></select></label>
+<div class="gridClienteAgendamento">
+<label class="campoNome">Nome<input id="clienteNome" placeholder="Seu nome completo"></label>
+<label class="campoWhatsapp">WhatsApp<input id="clienteTelefone" placeholder="(48) 9 9999 9999"></label>
+<label class="campoBarbeiro">Barbeiro<select id="barbeiroSelect"></select></label>
+<label class="campoServico">Serviço<select id="servicoSelect"></select></label>
+<label class="campoData">Data<input id="dataAgendamento" type="date"></label>
+<label class="campoHora">Horário<select id="horaSolicitada"></select></label>
 </div>
 <div class="linhaBotoesCliente">
 <button onclick="solicitarAgendamento()" class="principal">Solicitar Agendamento</button>
