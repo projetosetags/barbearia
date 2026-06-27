@@ -251,17 +251,20 @@ if(!lista.length){
 safe('listaPainel').innerHTML=`<div class="tituloAgendaDia">AGENDAMENTOS DO DIA ${dataSelecionada}</div><div class="itemAgenda">Nenhum agendamento para esta data.</div>`
 return
 }
-safe('listaPainel').innerHTML=`<div class="tituloAgendaDia">AGENDAMENTOS DO DIA ${dataSelecionada}</div>`+lista.map(a=>`
-<div class="linhaAgendaAdmin">
-<div><strong>Horário</strong>${formatarHora(a.hora_solicitada)}</div>
-<div><strong>Nome</strong>${a.clientes?.nome||''}</div>
-<div><strong>WhatsApp</strong>${telefoneBR(a.clientes?.telefone||'')}</div>
-<div><strong>Serviço</strong>${a.servicos?.nome||''}</div>
-<div><strong>Status</strong>${a.status}</div>
-<div><strong>Previsto</strong>${formatarHora(a.hora_prevista)||'aguardando'}</div>
-<div class="linhaAgendaAdminAcoes">${botoesPainel(a)}</div>
-</div>
-`).join('')
+let html=`<div class="tituloAgendaDia">AGENDAMENTOS DO DIA ${dataSelecionada}</div>`
+html+='<div class="tabelaRecepcao">'
+html+='<div class="th">Hora</div><div class="th">Cliente</div><div class="th">WhatsApp</div><div class="th">Serviço</div><div class="th">Barbeiro</div><div class="th">Status</div><div class="th">Ações</div>'
+lista.forEach(a=>{
+html+=`<div>${formatarHora(a.hora_solicitada)}</div>`
+html+=`<div><strong>${a.clientes?.nome||''}</strong><br><small>Previsto: ${formatarHora(a.hora_prevista)||'aguardando'}</small></div>`
+html+=`<div>${telefoneBR(a.clientes?.telefone||'')}</div>`
+html+=`<div>${a.servicos?.nome||''}</div>`
+html+=`<div>${a.barbeiros?.nome||'-'}</div>`
+html+=`<div>${a.status}</div>`
+html+=`<div class="acoesTabela">${botoesPainel(a)}</div>`
+})
+html+='</div>'
+safe('listaPainel').innerHTML=html
 }
 /*=========================================================
 013 BOTÕES PAINEL
@@ -350,6 +353,9 @@ if(safe('clienteTelefone'))safe('clienteTelefone').addEventListener('input',masc
 if(safe('clienteTelefone'))safe('clienteTelefone').addEventListener('change',gerarHorarios)
 if(safe('clienteTelefone'))safe('clienteTelefone').addEventListener('blur',gerarHorarios)
 if(safe('cfgTelefone'))safe('cfgTelefone').addEventListener('input',mascaraWhatsappConfig)
+bloquearDataPassadaCliente()
+if(safe('clienteNome'))safe('clienteNome').addEventListener('blur',capitalizarNomeCliente)
+if(safe('clienteTelefone'))safe('clienteTelefone').addEventListener('blur',verificarAgendamentoAtivoCliente)
 if(typeof protegerAdmin==='function')await protegerAdmin()
 setInterval(()=>{if(safe('recepcaoFila'))carregarRecepcao()},10000)
 setInterval(()=>{if(safe('listaPainel'))carregarPainel()},30000)
@@ -466,7 +472,8 @@ let base=new Date(inicio)
 base.setDate(inicio.getDate()+d)
 let diaSemana=dias[base.getDay()]
 let dt=String(base.getDate()).padStart(2,'0')+'-'+String(base.getMonth()+1).padStart(2,'0')
-html+=`<div class="calDia"><strong>${diaSemana}</strong><br><small>${dt}</small></div>`
+let hojeClasse=dataISO(base)===dataHoje()?' hojeAgenda':''
+html+=`<div class="calDia${hojeClasse}"><strong>${diaSemana}</strong><br><small>${dt}</small></div>`
 }
 for(let h=8;h<=20;h++){
 let horarios=[]
@@ -1605,6 +1612,41 @@ if(n.length<=2)el.value=n
 else if(n.length<=3)el.value=`(${n.slice(0,2)}) ${n.slice(2)}`
 else if(n.length<=7)el.value=`(${n.slice(0,2)}) ${n.slice(2,3)} ${n.slice(3)}`
 else el.value=`(${n.slice(0,2)}) ${n.slice(2,3)} ${n.slice(3,7)} ${n.slice(7)}`
+}
+/*=========================================================
+060 CAPITALIZAR NOME CLIENTE
+=========================================================*/
+function capitalizarNomeCliente(){
+let el=safe('clienteNome')
+if(!el)return
+el.value=el.value.toLowerCase().replace(/\b\w/g,l=>l.toUpperCase())
+}
+/*=========================================================
+061 BLOQUEAR DATA PASSADA CLIENTE
+=========================================================*/
+function bloquearDataPassadaCliente(){
+if(safe('dataAgendamento'))safe('dataAgendamento').min=dataHoje()
+}
+/*=========================================================
+062 VERIFICAR AGENDAMENTO ATIVO CLIENTE
+=========================================================*/
+async function verificarAgendamentoAtivoCliente(){
+let telefone=safe('clienteTelefone')?.value?.trim()||''
+let data_agendamento=safe('dataAgendamento')?.value||dataHoje()
+if(!telefone)return false
+let {data=[]}=await client.from('agendamentos').select('id,clientes!inner(telefone)').eq('data_agendamento',data_agendamento).eq('clientes.telefone',telefone).in('status',['aguardando','aceito','confirmado','proximo','em_atendimento'])
+if(data.length){
+safe('retornoCliente').innerHTML='Você já possui um agendamento ativo neste dia. Use o painel abaixo para acompanhar.'
+return true
+}
+return false
+}
+/*=========================================================
+063 EDITAR STATUS RAPIDO
+=========================================================*/
+async function editarStatusRapido(id,status){
+await alterarStatus(id,status)
+await carregarAgendaSemanal()
 }
 /*=========================================================
 0 SERVICE WORKER
