@@ -12,10 +12,30 @@ function safe(id){
 return document.getElementById(id)
 }
 /*=========================================================
-003 DATA HOJE
+003 DATA HOJE LAGUNA SC
 =========================================================*/
 function dataHoje(){
-return new Date().toISOString().slice(0,10)
+return new Intl.DateTimeFormat('en-CA',{
+timeZone:'America/Sao_Paulo',
+year:'numeric',
+month:'2-digit',
+day:'2-digit'
+}).format(new Date())
+}
+/*=========================================================
+003A DATA ISO LOCAL
+=========================================================*/
+function dataISO(date){
+let y=date.getFullYear()
+let m=String(date.getMonth()+1).padStart(2,'0')
+let d=String(date.getDate()).padStart(2,'0')
+return `${y}-${m}-${d}`
+}
+/*=========================================================
+003B AGORA LAGUNA SC
+=========================================================*/
+function agoraLaguna(){
+return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}))
 }
 /*=========================================================
 004 FORMATAR HORA
@@ -411,13 +431,13 @@ await atualizarAdminPainel()
 =========================================================*/
 async function carregarAgendaSemanal(){
 let dataBase=safe('dataPainel')?.value||dataHoje()
-let base=new Date(dataBase+'T00:00:00')
+let base=new Date(dataBase+'T12:00:00')
 let inicio=new Date(base)
 inicio.setDate(base.getDate()-1)
 let fim=new Date(base)
 fim.setDate(base.getDate()+6)
-let dataInicio=inicio.toISOString().slice(0,10)
-let dataFim=fim.toISOString().slice(0,10)
+let dataInicio=dataISO(inicio)
+let dataFim=dataISO(fim)
 let {data=[],error}=await client
 .from('agendamentos')
 .select('id,cliente_id,servico_id,barbeiro_id,data_agendamento,hora_solicitada,hora_prevista,status,valor,compareceu,cor_agenda,clientes(nome,telefone),servicos(nome,duracao_minutos,valor),barbeiros(nome)')
@@ -459,7 +479,7 @@ html+=`<div class="calHora">${horario}</div>`
 for(let d=0;d<7;d++){
 let base=new Date(inicio)
 base.setDate(inicio.getDate()+d)
-let data=base.toISOString().slice(0,10)
+let data=dataISO(base)
 let evento=lista.find(x=>x.data_agendamento===data&&String(x.hora_solicitada).slice(0,5)===horario)
 if(evento){
 let nomeEvento=evento?.clientes?.nome||''
