@@ -332,6 +332,7 @@ if(safe('clienteTelefone'))safe('clienteTelefone').addEventListener('blur',gerar
 if(typeof protegerAdmin==='function')await protegerAdmin()
 setInterval(()=>{if(safe('recepcaoFila'))carregarRecepcao()},10000)
 setInterval(()=>{if(safe('listaPainel'))carregarPainel()},30000)
+setInterval(finalizarAutomaticamente,60000)
 })
 /*=========================================================
 019 GERAR HORARIOS
@@ -1533,7 +1534,42 @@ else if(n.length<=3)el.value=`(${n.slice(0,2)}) ${n.slice(2)}`
 else if(n.length<=7)el.value=`(${n.slice(0,2)}) ${n.slice(2,3)} ${n.slice(3)}`
 else el.value=`(${n.slice(0,2)}) ${n.slice(2,3)} ${n.slice(3,7)} ${n.slice(7)}`
 }
-
+/*=========================================================
+057 FINALIZAR AUTOMATICAMENTE
+=========================================================*/
+async function finalizarAutomaticamente(){
+let hoje=dataHoje()
+let {data:lista=[]}=await client.from('agendamentos').select('*,servicos(duracao_minutos)').eq('data_agendamento',hoje).in('status',['aceito','confirmado','proximo'])
+let agora=new Date()
+for(let ag of lista){
+let hora=String(ag.hora_prevista||ag.hora_solicitada||'')
+if(!hora)continue
+hora=hora.substring(0,5)
+let termino=new Date(`${ag.data_agendamento}T${hora}:00`)
+let duracao=Number(ag.servicos?.duracao_minutos||30)
+termino.setMinutes(termino.getMinutes()+duracao+15)
+if(agora<termino)continue
+await client.from('agendamentos').update({status:'finalizado',data_finalizacao:new Date().toISOString()}).eq('id',ag.id)
+await client.from('comissoes').insert({barbeiro_id:ag.barbeiro_id,agendamento_id:ag.id,percentual:50,valor:Number(ag.valor||0)*0.5})
+await client.rpc('incrementar_atendimento_cliente',{p_cliente_id:ag.cliente_id})
+await whatsappFinalizadoAutomatico(ag.id)
+}
+if(safe('listaPainel'))carregarPainel()
+if(safe('calendarioSemanal'))carregarAgendaSemanal()
+}
+/*=========================================================
+058 WHATSAPP FINALIZADO AUTOMATICO
+=========================================================*/
+async function whatsappFinalizadoAutomatico(id){
+let {data:a,error}=await client.from('agendamentos').select('*,clientes(nome,telefone),servicos(nome),barbeiros(nome)').eq('id',id).single()
+if(error||!a)return
+let msg=`Olá ${a.clientes?.nome}!
+Seu atendimento na Barbearia Leandro David foi finalizado.
+Muito obrigado pela preferência!
+Esperamos revê-lo em breve.
+Se gostou do atendimento, indique nossa barbearia para um amigo.`
+abrirWhatsapp(a.clientes?.telefone,msg)
+}
 /*=========================================================
 0 SERVICE WORKER
 =========================================================*/
