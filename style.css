@@ -102,4 +102,20 @@ main{padding:10px}
 .logoTopo p{display:none}
 .logoTopo img{width:38px;height:38px}
 }
+/*=========================================================
+RODAPÉ DOS PAINÉIS
+=========================================================*/
+.rodapePainel{
+margin-top:18px;
+padding-top:10px;
+border-top:1px solid #e5e7eb;
+text-align:center;
+font-size:10px;
+font-weight:500;
+color:#94a3b8;
+letter-spacing:.3px;
+user-select:none;
+}
+.rodapePainel a{color:#94a3b8;text-decoration:none;}
+.rodapePainel a:hover{color:#64748b;}
 
