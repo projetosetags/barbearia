@@ -149,3 +149,10 @@ user-select:none;
 .calEvento{font-size:8.5px!important;padding:3px 1px!important}
 .calEvento strong{font-size:8.5px!important}
 }
+.gridConfigBarbearia{display:grid;grid-template-columns:1.2fr 1fr 1.2fr .75fr .75fr;gap:12px;align-items:end}
+.campoEnderecoCompleto{grid-column:1/-1}
+.campoEnderecoCompleto input{width:100%!important}
+@media(max-width:900px){.gridConfigBarbearia{grid-template-columns:1fr 1fr}.campoEnderecoCompleto{grid-column:1/-1}}
+@media(max-width:600px){.gridConfigBarbearia{grid-template-columns:1fr}}
+.hojeAgenda{background:#16a34a!important;color:#fff!important}
+.hojeAgenda small{color:#dcfce7!important}
