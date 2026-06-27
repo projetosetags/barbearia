@@ -463,8 +463,9 @@ html+='<div class="calDia">Hora</div>'
 for(let d=0;d<7;d++){
 let base=new Date(inicio)
 base.setDate(inicio.getDate()+d)
+let diaSemana=dias[base.getDay()]
 let dt=String(base.getDate()).padStart(2,'0')+'-'+String(base.getMonth()+1).padStart(2,'0')
-html+=`<div class="calDia"><strong>${dias[d]}</strong><br><small>${dt}</small></div>`
+html+=`<div class="calDia"><strong>${diaSemana}</strong><br><small>${dt}</small></div>`
 }
 for(let h=8;h<=20;h++){
 let horarios=[]
