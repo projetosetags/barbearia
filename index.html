@@ -1,65 +1,84 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#111111">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Leandro David">
-  <meta name="description" content="Agende seu horário na Barbearia Leandro David, em Laguna/SC.">
-  <title>Barbearia Leandro David • Agendamento</title>
-  <link rel="manifest" href="manifest.json?v=20">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=20">
-  <link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png?v=20">
-  <link rel="stylesheet" href="style-pro.css?v=20">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Barbearia Leandro David</title>
+<meta name="description" content="Agendamento online da Barbearia Leandro David em Laguna/SC.">
+<link rel="manifest" href="manifest.json?v=30">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=30">
+<link rel="icon" href="logo-app.svg?v=30" type="image/svg+xml">
+<link rel="stylesheet" href="novo-style.css?v=30">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="app-publico">
-  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
-  <header class="public-header shell">
-    <div class="brand">
-      <img class="brand-mark" src="logo-app.svg?v=20" alt="Logo Barbearia Leandro David">
-      <div class="brand-copy"><strong>LEANDRO DAVID</strong><span>BARBEARIA • LAGUNA/SC</span></div>
+<body>
+<header class="topbar wrap">
+  <a class="brand" href="./"><img src="logo-app.svg?v=30" alt="LD"><div><strong>LEANDRO DAVID</strong><span>BARBEARIA • LAGUNA/SC</span></div></a>
+  <a class="whatsapp-top" id="linkWhatsappTopo" href="#" target="_blank" rel="noopener">WhatsApp</a>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="tag">AGENDAMENTO ONLINE</span>
+      <h1>Seu horário,<br><em>sem complicação.</em></h1>
+      <p>Escolha o serviço, o profissional e o melhor horário. Tudo rápido, simples e pensado para o celular.</p>
+      <div class="chips"><span>✓ Fácil</span><span>✓ Rápido</span><span>✓ Sem ligação</span></div>
     </div>
-    <a class="mini-link" href="https://wa.me/5548996684751" target="_blank" rel="noopener">WhatsApp</a>
-  </header>
+    <img class="hero-logo" src="logo-app.svg?v=30" alt="Barbearia Leandro David">
+  </section>
 
-  <main class="shell public-main">
-    <section class="hero-card">
-      <div class="hero-copy">
-        <span class="eyebrow">AGENDAMENTO ONLINE</span>
-        <h1>Seu horário,<br><em>sem complicação.</em></h1>
-        <p>Escolha o serviço, o profissional e o melhor horário. Você agenda em poucos passos e acompanha tudo pelo celular.</p>
-        <div class="hero-badges"><span>✓ Fácil</span><span>✓ Rápido</span><span>✓ Sem ligação</span></div>
+  <section class="app-grid">
+    <form id="formAgendamento" class="card booking-card">
+      <div class="section-title"><span>01</span><div><h2>Seus dados</h2><p>Nome e WhatsApp para contato.</p></div></div>
+      <div class="grid two">
+        <label>Nome<input id="clienteNome" autocomplete="name" placeholder="Seu nome completo" required></label>
+        <label>WhatsApp<input id="clienteTelefone" autocomplete="tel" inputmode="tel" placeholder="(48) 9 9999 9999" required></label>
       </div>
-      <div class="hero-logo"><img src="logo-app.svg?v=20" alt="LD"></div>
-    </section>
 
-    <section id="viewCliente" class="booking-layout">
-      <div class="booking-card">
-        <div class="section-head"><div><span class="step">01</span><h2>Seus dados</h2></div><p>Precisamos apenas do seu nome e WhatsApp.</p></div>
-        <div class="form-grid two">
-          <label><span>Nome</span><input id="clienteNome" autocomplete="name" placeholder="Seu nome completo"></label>
-          <label><span>WhatsApp</span><input id="clienteTelefone" inputmode="tel" autocomplete="tel" placeholder="(48) 9 9999 9999"></label>
-        </div>
-        <div class="divider"></div>
-        <div class="section-head"><div><span class="step">02</span><h2>Escolha o atendimento</h2></div><p>Serviço e profissional.</p></div>
-        <div class="form-grid two"><label><span>Serviço</span><select id="servicoSelect"></select></label><label><span>Barbeiro</span><select id="barbeiroSelect"></select></label></div>
-        <div class="divider"></div>
-        <div class="section-head"><div><span class="step">03</span><h2>Dia e horário</h2></div><p>Mostramos apenas horários livres.</p></div>
-        <div class="form-grid two"><label><span>Data</span><input id="dataAgendamento" type="date"></label><label><span>Horário</span><select id="horaSolicitada"></select></label></div>
-        <button id="btnAgendar" class="btn btn-primary btn-big" onclick="solicitarAgendamento()"><span>Confirmar agendamento</span><b>→</b></button>
-        <div id="retornoCliente" class="notice" aria-live="polite"></div>
+      <div class="divider"></div>
+      <div class="section-title"><span>02</span><div><h2>Escolha o atendimento</h2><p>Serviço e profissional.</p></div></div>
+      <div class="grid two">
+        <label>Serviço<select id="servicoSelect" required></select></label>
+        <label>Barbeiro<select id="barbeiroSelect" required></select></label>
       </div>
-      <aside class="side-stack">
-        <section class="info-card dark-card"><span class="eyebrow">BARBEARIA LEANDRO DAVID</span><h3>Atendimento com hora marcada.</h3><p>Rua Coronel Fernandes Martins, 251, em frente à UDESC, Laguna/SC.</p><button class="btn btn-light" onclick="obterLocalizacaoCliente()">Traçar rota</button><div id="geoCliente"></div></section>
-        <section class="info-card"><div class="section-head compact"><div><span class="step">✓</span><h2>Meu agendamento</h2></div></div><p class="muted">Consulte a confirmação e o horário previsto usando seu WhatsApp.</p><label class="standalone"><span>WhatsApp</span><input id="telefoneBusca" inputmode="tel" placeholder="(48) 9 9999 9999"></label><button class="btn btn-secondary" onclick="acompanharCliente()">Consultar agora</button><div id="listaCliente" class="appointment-result"></div></section>
-      </aside>
-    </section>
-  </main>
-  <footer class="public-footer shell"><span>Barbearia Leandro David</span><span>Rua Cel. Fernandes Martins, 251 • Laguna/SC</span><span>Desenvolvido por Manoel F. Neto • bemprotegido.net</span></footer>
-  <script src="supabase.js?v=10"></script><script src="app.js?v=10"></script><script src="app-pro.js?v=20"></script>
-  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js?v=20').catch(()=>{})}</script>
+
+      <div class="divider"></div>
+      <div class="section-title"><span>03</span><div><h2>Dia e horário</h2><p>Selecione quando deseja ser atendido.</p></div></div>
+      <div class="grid two">
+        <label>Data<input id="dataAgendamento" type="date" required></label>
+        <label>Horário<select id="horaSolicitada" required></select></label>
+      </div>
+      <label class="obs">Observação opcional<textarea id="observacao" rows="3" placeholder="Alguma preferência ou informação importante?"></textarea></label>
+      <button id="btnAgendar" class="primary" type="submit">Confirmar agendamento <b>→</b></button>
+      <div id="mensagem" class="mensagem" role="status" aria-live="polite"></div>
+    </form>
+
+    <aside class="side">
+      <section class="card dark-card">
+        <span class="tag">BARBEARIA LEANDRO DAVID</span>
+        <h3>Atendimento com hora marcada.</h3>
+        <p id="textoEndereco">Rua Coronel Fernandes Martins, 251, em frente à UDESC, Laguna - SC</p>
+        <a class="light-button" id="linkRota" href="#" target="_blank" rel="noopener">Traçar rota</a>
+      </section>
+      <section class="card status-card">
+        <span class="status-dot"></span>
+        <div><strong id="statusSistema">Agendamento disponível</strong><p id="statusDetalhe">Escolha o horário e envie sua solicitação.</p></div>
+      </section>
+      <section class="card install-card">
+        <h3>Instale como app</h3>
+        <p>Android: menu do navegador → <b>Instalar app</b>.<br>iPhone: Compartilhar → <b>Adicionar à Tela de Início</b>.</p>
+      </section>
+    </aside>
+  </section>
+</main>
+
+<footer class="wrap footer"><span>Barbearia Leandro David</span><span id="footerEndereco"></span><span>Desenvolvido por Manoel F. Neto • bemprotegido.net</span></footer>
+<script src="config.js?v=30"></script>
+<script src="novo-app.js?v=30"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js?v=30').catch(()=>{})}</script>
 </body>
 </html>
