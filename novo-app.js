@@ -49,7 +49,7 @@ function mensagemWhatsApp(d){
 function abrirWhatsApp(texto){const numero=String(cfg.whatsapp||'').replace(/\D/g,'');window.open(`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`,'_blank','noopener')}
 async function salvarBanco(d){
   const telefone=telLimpo(d.telefone);const serv=servicos.find(s=>String(s.id)===String(d.servico));
-  const c=await db.from('clientes').upsert({telefone,nome:d.nome},{onConflict:'telefone'});if(c.error)throw c.error;
+  const c=await db.from('clientes').upsert({telefone,nome:d.nome},{onConflict:'telefone',ignoreDuplicates:true});if(c.error)throw c.error;
   const a=await db.from('agendamentos').insert({cliente_telefone:telefone,barbeiro_id:d.barbeiro,servico_id:d.servico,data:d.data,hora:d.hora,valor:Number(serv?.valor||0),observacao:d.obs||null,status:'pendente'});if(a.error)throw a.error;
 }
 async function enviar(e){
