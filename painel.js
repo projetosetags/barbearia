@@ -2,6 +2,7 @@
 const $=id=>document.getElementById(id);
 const hoje=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const moeda=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const EMAIL_LEANDRO='leandro00black@gmail.com';
 let db=null,auth=null;
 function mensagem(txt,tipo='warn'){const e=$('loginMsg');if(e){e.textContent=txt;e.className=`mensagem ${tipo}`}}
 function iniciar(){if(!window.firebase||!window.FB_CONFIG?.apiKey)return false;try{if(!firebase.apps.length)firebase.initializeApp(window.FB_CONFIG);auth=firebase.auth();db=firebase.firestore();return true}catch(e){console.error(e);return false}}
@@ -27,16 +28,12 @@ window.addEventListener('DOMContentLoaded',()=>{
  if(!iniciar()){mensagem('Firebase não configurado.');return}
  $('btnEntrar').onclick=async()=>{
   const usuario=$('email').value.trim();const senha=$('senha').value;
-  let email=usuario;
-  if(!usuario.includes('@')){
-   if(usuario.toLowerCase()!=='leandro'){mensagem('Use o usuário Leandro ou seu e-mail.','erro');return}
-   email=localStorage.getItem('ld_admin_email')||'';
-   if(!email){mensagem('No primeiro acesso neste aparelho, entre uma vez com o e-mail do Firebase. Depois poderá usar apenas Leandro.','warn');return}
-  }
-  try{const cred=await auth.signInWithEmailAndPassword(email,senha);if(cred?.user?.email)localStorage.setItem('ld_admin_email',cred.user.email);mensagem('','ok')}catch(e){mensagem('Usuário/e-mail ou senha inválidos.','erro')}
+  const email=!usuario.includes('@')&&usuario.toLowerCase()==='leandro'?EMAIL_LEANDRO:usuario;
+  if(!email){mensagem('Informe o usuário ou e-mail.','erro');return}
+  try{await auth.signInWithEmailAndPassword(email,senha);mensagem('','ok')}catch(e){mensagem('Usuário/e-mail ou senha inválidos.','erro')}
  };
  $('btnSair').onclick=()=>auth.signOut();
  $('dataPainel').addEventListener('change',carregarAgenda);
- auth.onAuthStateChanged(user=>{if(user){if(user.email)localStorage.setItem('ld_admin_email',user.email);$('loginWrap').classList.add('hidden');$('painel').classList.remove('hidden');$('perfil').textContent='Leandro';carregarAgenda()}else{$('painel').classList.add('hidden');$('loginWrap').classList.remove('hidden')}})
+ auth.onAuthStateChanged(user=>{if(user){$('loginWrap').classList.add('hidden');$('painel').classList.remove('hidden');$('perfil').textContent=user.email===EMAIL_LEANDRO?'Leandro':'Administrador';carregarAgenda()}else{$('painel').classList.add('hidden');$('loginWrap').classList.remove('hidden')}})
 });
 })();
