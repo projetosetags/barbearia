@@ -34,12 +34,11 @@ window.addEventListener('DOMContentLoaded',()=>{
   const email=emailDoUsuario($('email').value);const senha=$('senha').value;
   if(!email){mensagem('Informe o usuário ou e-mail.','erro');return}
   if(!autorizado(email)){mensagem('Este usuário não tem acesso ao painel.','erro');return}
-  try{await auth.signInWithEmailAndPassword(email,senha);mensagem('','ok')}catch(e){mensagem('Usuário/e-mail ou senha inválidos.','erro')}
- };
- if($('btnPrimeiroAcesso'))$('btnPrimeiroAcesso').onclick=async()=>{
-  const email=emailDoUsuario($('email').value)||EMAIL_LEANDRO;
-  if(!autorizado(email)){mensagem('Informe Leandro ou um e-mail autorizado.','erro');return}
-  try{await auth.sendPasswordResetEmail(email);mensagem(`Enviamos para ${email} um link para criar ou redefinir a senha.`,'ok')}catch(e){console.error(e);mensagem('Não foi possível enviar o e-mail. Verifique se este usuário já existe no Firebase Authentication.','erro')}
+  if(!senha){
+    try{await auth.sendPasswordResetEmail(email);mensagem(`Enviamos para ${email} um link para criar ou redefinir a senha.`,'ok')}catch(e){console.error(e);mensagem('Não foi possível enviar o link. Verifique se este e-mail já foi criado no Firebase Authentication.','erro')}
+    return;
+  }
+  try{await auth.signInWithEmailAndPassword(email,senha);mensagem('','ok')}catch(e){mensagem('Usuário/e-mail ou senha inválidos. Se for o primeiro acesso, apague a senha e toque em Entrar para receber o link de criação da senha.','erro')}
  };
  $('btnSair').onclick=()=>auth.signOut();
  $('dataPainel').addEventListener('change',carregarAgenda);
