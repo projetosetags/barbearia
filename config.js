@@ -10,9 +10,14 @@ window.BARBEARIA_CONFIG={
   supabaseUrl:'',
   supabasePublishableKey:'',
   servicosPadrao:[
-    {id:'corte',nome:'Corte masculino',duracao:30,valor:40},
-    {id:'barba',nome:'Barba',duracao:30,valor:30},
-    {id:'combo',nome:'Corte + barba',duracao:45,valor:60}
+    {id:'corte',nome:'Corte',duracao:30,valor:30},
+    {id:'corte-navalhado',nome:'Corte navalhado',duracao:30,valor:35},
+    {id:'barba',nome:'Barba',duracao:20,valor:20},
+    {id:'cabelo-barba',nome:'Cabelo / barba',duracao:40,valor:40},
+    {id:'sobrancelha',nome:'Sobrancelha',duracao:10,valor:10},
+    {id:'combo',nome:'Cabelo / barba / sobrancelha',duracao:45,valor:50},
+    {id:'pigmentacao-cabelo',nome:'Pigmentação cabelo',duracao:25,valor:20},
+    {id:'pigmentacao-barba',nome:'Pigmentação barba',duracao:25,valor:15}
   ],
   barbeirosPadrao:[
     {id:'leandro-david',nome:'Leandro David'}
