@@ -17,8 +17,9 @@
   const moeda = v => Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const telefoneLimpo = v => String(v || '').replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'');
   const formatarTelefone = v => {const n=telefoneLimpo(v).slice(0,11);if(n.length<=2)return n;if(n.length<=7)return `(${n.slice(0,2)}) ${n.slice(2,3)} ${n.slice(3)}`;return `(${n.slice(0,2)}) ${n.slice(2,3)} ${n.slice(3,7)} ${n.slice(7)}`};
-  const minutos = h => {const [hh,mm]=h.split(':').map(Number);return hh*60+mm};
+  const minutos = h => {const [hh,mm]=String(h).split(':').map(Number);return hh*60+mm};
   const horaTexto = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+  const diaSemana = data => new Date(`${data}T12:00:00`).getDay();
 
   function mostrarMensagem(texto,tipo='ok'){const el=$('mensagem');if(!el)return;el.textContent=texto;el.className=`mensagem ${tipo}`}
 
@@ -27,7 +28,7 @@
       const ref=await db.collection('configuracoes').doc('geral').get();
       if(!ref.exists)return;
       const d=ref.data();
-      if(d.nome)cfg.nome=d.nome;if(d.cidade)cfg.cidade=d.cidade;if(d.endereco)cfg.endereco=d.endereco;if(d.whatsapp)cfg.whatsapp=d.whatsapp;if(d.inicio)cfg.inicio=d.inicio;if(d.fim)cfg.fim=d.fim;if(d.intervalo)cfg.intervalo=Number(d.intervalo);
+      if(d.nome)cfg.nome=d.nome;if(d.cidade)cfg.cidade=d.cidade;if(d.endereco)cfg.endereco=d.endereco;if(d.whatsapp)cfg.whatsapp=d.whatsapp;if(d.intervalo)cfg.intervalo=Number(d.intervalo);
     }catch(e){console.warn('Não foi possível carregar configurações',e)}
   }
 
@@ -47,7 +48,9 @@
     if(select){select.innerHTML=barbeiros.map(item=>`<option value="${item.id}">${item.nome}</option>`).join('');if(barbeiros[0])select.value=barbeiros[0].id}
   }
 
-  function selecionarServico(id,rolar=true){
+  function servicoAtual(){return servicos.find(x=>String(x.id)===String($('servicoSelect')?.value))}
+
+  async function selecionarServico(id,rolar=true){
     const s=servicos.find(x=>String(x.id)===String(id));
     if(!s)return;
     $('servicoSelect').value=s.id;
@@ -55,6 +58,7 @@
     const escolhido=$('servicoEscolhido');
     if(escolhido)escolhido.textContent=`${s.nome} • ${s.duracao_minutos} min • ${moeda(s.valor)}`;
     mostrarMensagem('','ok');
+    await gerarHorarios();
     if(rolar){setTimeout(()=>$('agendar')?.scrollIntoView({behavior:'smooth',block:'start'}),120)}
   }
 
@@ -64,19 +68,32 @@
 
   async function carregarCatalogo(){try{carregarServicos();await carregarBarbeiros();ativarCards()}catch(e){console.error(e);mostrarMensagem('Não foi possível carregar os dados da barbearia agora.','erro')}}
 
-  async function horariosOcupados(){
+  async function agendamentosOcupados(){
     const data=$('dataAgendamento')?.value,barbeiro=$('barbeiroSelect')?.value;
-    if(!data||!barbeiro)return new Set();
+    if(!data||!barbeiro)return [];
     try{
       const snap=await db.collection('agendamentos').where('data','==',data).where('barbeiro_id','==',barbeiro).get();
-      return new Set(snap.docs.map(doc=>doc.data()).filter(item=>['pendente','confirmado','em_atendimento'].includes(item.status)).map(item=>String(item.hora).slice(0,5)));
-    }catch(e){console.warn('Consulta pública de horários indisponível',e);return new Set()}
+      return snap.docs.map(doc=>doc.data()).filter(item=>['pendente','confirmado','em_atendimento'].includes(item.status)).map(item=>({inicio:minutos(String(item.hora).slice(0,5)),duracao:Number(item.duracao_minutos||30)}));
+    }catch(e){console.warn('Consulta pública de horários indisponível',e);return []}
   }
 
   async function gerarHorarios(){
     const select=$('horaSolicitada');if(!select)return;
-    const ocupados=await horariosOcupados();const inicio=minutos(cfg.inicio||'08:30');const fim=minutos(cfg.fim||'20:00');const intervalo=Number(cfg.intervalo||30);const data=$('dataAgendamento').value;const agora=new Date();const horarios=[];
-    for(let m=inicio;m<=fim;m+=intervalo){const h=horaTexto(m);if(ocupados.has(h))continue;if(data===hoje()){const [hh,mm]=h.split(':').map(Number);const alvo=new Date();alvo.setHours(hh,mm,0,0);if(alvo.getTime()<agora.getTime()+20*60000)continue}horarios.push(h)}
+    const data=$('dataAgendamento')?.value;if(!data){select.innerHTML='<option value="">Escolha uma data</option>';return}
+    const agendaDia=cfg.horariosSemana?.[diaSemana(data)];
+    if(!agendaDia){select.innerHTML='<option value="">Fechado aos domingos</option>';return}
+    const ocupados=await agendamentosOcupados();
+    const inicio=minutos(agendaDia.inicio),fim=minutos(agendaDia.fim),intervalo=Number(cfg.intervalo||30),duracao=Number(servicoAtual()?.duracao_minutos||30),agora=new Date(),horarios=[];
+    for(let m=inicio;m+duracao<=fim;m+=intervalo){
+      const h=horaTexto(m);
+      const conflita=ocupados.some(o=>m<o.inicio+o.duracao && m+duracao>o.inicio);
+      if(conflita)continue;
+      if(data===hoje()){
+        const alvo=new Date();alvo.setHours(Math.floor(m/60),m%60,0,0);
+        if(alvo.getTime()<agora.getTime()+20*60000)continue;
+      }
+      horarios.push(h);
+    }
     select.innerHTML=horarios.length?horarios.map(h=>`<option value="${h}">${h}</option>`).join(''):'<option value="">Sem horários disponíveis</option>';
   }
 
