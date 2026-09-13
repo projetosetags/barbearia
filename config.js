@@ -4,9 +4,16 @@ window.BARBEARIA_CONFIG={
   endereco:'Rua Coronel Fernandes Martins, 251, em frente à UDESC, Laguna - SC',
   whatsapp:'5548996684751',
   instagram:'',
-  inicio:'08:30',
-  fim:'20:00',
   intervalo:30,
+  horariosSemana:{
+    0:null,
+    1:{inicio:'14:00',fim:'19:00'},
+    2:{inicio:'09:00',fim:'19:00'},
+    3:{inicio:'09:00',fim:'19:00'},
+    4:{inicio:'09:00',fim:'19:00'},
+    5:{inicio:'09:00',fim:'19:00'},
+    6:{inicio:'09:00',fim:'17:00'}
+  },
   supabaseUrl:'',
   supabasePublishableKey:'',
   servicosPadrao:[
