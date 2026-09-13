@@ -33,7 +33,8 @@
 
   function carregarServicos(){
     servicos=(cfg.servicosPadrao||[]).map(item=>({id:item.id,nome:item.nome,duracao_minutos:Number(item.duracao||30),valor:Number(item.valor||0)}));
-    $('servicoSelect').innerHTML=servicos.map(item=>`<option value="${item.id}">${item.nome} • ${item.duracao_minutos} min • ${moeda(item.valor)}</option>`).join('');
+    const select=$('servicoSelect');
+    if(select){select.innerHTML='<option value="">Escolha um serviço</option>'+servicos.map(item=>`<option value="${item.id}">${item.nome}</option>`).join('')}
   }
 
   async function carregarBarbeiros(){
@@ -42,10 +43,26 @@
       barbeiros=snap.docs.map(doc=>({id:doc.id,...doc.data()})).sort((a,b)=>Number(a.ordem||0)-Number(b.ordem||0));
     }catch(e){console.warn('Não foi possível carregar barbeiros do Firebase',e);barbeiros=[]}
     if(!barbeiros.length)barbeiros=cfg.barbeirosPadrao||[];
-    $('barbeiroSelect').innerHTML=barbeiros.map(item=>`<option value="${item.id}">${item.nome}</option>`).join('');
+    const select=$('barbeiroSelect');
+    if(select){select.innerHTML=barbeiros.map(item=>`<option value="${item.id}">${item.nome}</option>`).join('');if(barbeiros[0])select.value=barbeiros[0].id}
   }
 
-  async function carregarCatalogo(){try{carregarServicos();await carregarBarbeiros()}catch(e){console.error(e);mostrarMensagem('Não foi possível carregar os dados da barbearia agora.','erro')}}
+  function selecionarServico(id,rolar=true){
+    const s=servicos.find(x=>String(x.id)===String(id));
+    if(!s)return;
+    $('servicoSelect').value=s.id;
+    document.querySelectorAll('.service-card').forEach(card=>card.classList.toggle('selected',card.dataset.service===s.id));
+    const escolhido=$('servicoEscolhido');
+    if(escolhido)escolhido.textContent=`${s.nome} • ${s.duracao_minutos} min • ${moeda(s.valor)}`;
+    mostrarMensagem('','ok');
+    if(rolar){setTimeout(()=>$('agendar')?.scrollIntoView({behavior:'smooth',block:'start'}),120)}
+  }
+
+  function ativarCards(){
+    document.querySelectorAll('.service-card[data-service]').forEach(card=>card.addEventListener('click',()=>selecionarServico(card.dataset.service,true)));
+  }
+
+  async function carregarCatalogo(){try{carregarServicos();await carregarBarbeiros();ativarCards()}catch(e){console.error(e);mostrarMensagem('Não foi possível carregar os dados da barbearia agora.','erro')}}
 
   async function horariosOcupados(){
     const data=$('dataAgendamento')?.value,barbeiro=$('barbeiroSelect')?.value;
@@ -77,18 +94,19 @@
 
   async function enviarAgendamento(e){
     e.preventDefault();const btn=$('btnAgendar');const d={nome:$('clienteNome').value.trim(),telefone:$('clienteTelefone').value.trim(),servico:$('servicoSelect').value,barbeiro:$('barbeiroSelect').value,data:$('dataAgendamento').value,hora:$('horaSolicitada').value,obs:$('observacao').value.trim()};
-    if(!d.nome||telefoneLimpo(d.telefone).length<10||!d.servico||!d.barbeiro||!d.data||!d.hora){mostrarMensagem('Confira todos os dados antes de continuar.','erro');return}
+    if(!d.servico){mostrarMensagem('Primeiro toque em um dos serviços acima.','erro');$('cardsServicos')?.scrollIntoView({behavior:'smooth',block:'center'});return}
+    if(!d.nome||telefoneLimpo(d.telefone).length<10||!d.barbeiro||!d.data||!d.hora){mostrarMensagem('Confira nome, WhatsApp, data e horário.','erro');return}
     const original=btn.innerHTML;btn.disabled=true;btn.textContent='Reservando...';
     try{await salvarAgendamento(d);mostrarMensagem('Agendamento confirmado automaticamente. Seu horário já está reservado.','ok');abrirWhatsApp(mensagemWhatsApp(d));await gerarHorarios()}catch(err){console.error(err);mostrarMensagem('Não foi possível registrar o agendamento agora.','erro')}finally{btn.disabled=false;btn.innerHTML=original}
   }
 
   function prepararTela(){
     const data=$('dataAgendamento');if(data){data.min=hoje();data.value=hoje()}
-    $('textoEndereco').textContent=cfg.endereco||'';$('footerEndereco').textContent=cfg.endereco||'';
-    $('linkWhatsappTopo').href=`https://wa.me/${String(cfg.whatsapp||'').replace(/\D/g,'')}`;
-    $('linkRota').href=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cfg.endereco||cfg.nome||'')}`;
-    $('clienteTelefone').addEventListener('input',e=>e.target.value=formatarTelefone(e.target.value));$('dataAgendamento').addEventListener('change',gerarHorarios);$('barbeiroSelect').addEventListener('change',gerarHorarios);$('formAgendamento').addEventListener('submit',enviarAgendamento);
-    $('statusSistema').textContent='Agendamento automático';$('statusDetalhe').textContent='Serviços e preços atualizados pelo app. O horário fica reservado imediatamente, sem necessidade de aprovação.';
+    if($('textoEndereco'))$('textoEndereco').textContent=cfg.endereco||'';if($('footerEndereco'))$('footerEndereco').textContent=cfg.endereco||'';
+    if($('linkWhatsappTopo'))$('linkWhatsappTopo').href=`https://wa.me/${String(cfg.whatsapp||'').replace(/\D/g,'')}`;
+    if($('linkRota'))$('linkRota').href=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cfg.endereco||cfg.nome||'')}`;
+    $('clienteTelefone')?.addEventListener('input',e=>e.target.value=formatarTelefone(e.target.value));$('dataAgendamento')?.addEventListener('change',gerarHorarios);$('barbeiroSelect')?.addEventListener('change',gerarHorarios);$('formAgendamento')?.addEventListener('submit',enviarAgendamento);
+    if($('statusSistema'))$('statusSistema').textContent='Agendamento automático';if($('statusDetalhe'))$('statusDetalhe').textContent='Escolha um serviço e finalize seu horário.';
   }
 
   window.addEventListener('DOMContentLoaded',async()=>{prepararTela();await carregarConfiguracoes();await carregarCatalogo();await gerarHorarios()});
