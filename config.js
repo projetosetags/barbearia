@@ -12,7 +12,7 @@ window.BARBEARIA_CONFIG={
   servicosPadrao:[
     {id:'corte',nome:'Corte masculino',duracao:30,valor:40},
     {id:'barba',nome:'Barba',duracao:30,valor:30},
-    {id:'combo',nome:'Corte + barba',duracao:60,valor:60}
+    {id:'combo',nome:'Corte + barba',duracao:45,valor:60}
   ],
   barbeirosPadrao:[
     {id:'leandro-david',nome:'Leandro David'}
