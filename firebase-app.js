@@ -31,21 +31,21 @@
     }catch(e){console.warn('Não foi possível carregar configurações',e)}
   }
 
-  async function carregarServicos(){
-    const snap=await db.collection('servicos').where('ativo','==',true).get();
-    servicos=snap.docs.map(doc=>{const d=doc.data();return {id:doc.id,...d,duracao_minutos:doc.id==='combo'?45:Number(d.duracao_minutos||30)}}).sort((a,b)=>Number(a.ordem||0)-Number(b.ordem||0));
-    if(!servicos.length)servicos=(cfg.servicosPadrao||[]).map(item=>({id:item.id,nome:item.nome,duracao_minutos:item.duracao,valor:item.valor}));
+  function carregarServicos(){
+    servicos=(cfg.servicosPadrao||[]).map(item=>({id:item.id,nome:item.nome,duracao_minutos:Number(item.duracao||30),valor:Number(item.valor||0)}));
     $('servicoSelect').innerHTML=servicos.map(item=>`<option value="${item.id}">${item.nome} • ${item.duracao_minutos} min • ${moeda(item.valor)}</option>`).join('');
   }
 
   async function carregarBarbeiros(){
-    const snap=await db.collection('barbeiros').where('ativo','==',true).get();
-    barbeiros=snap.docs.map(doc=>({id:doc.id,...doc.data()})).sort((a,b)=>Number(a.ordem||0)-Number(b.ordem||0));
+    try{
+      const snap=await db.collection('barbeiros').where('ativo','==',true).get();
+      barbeiros=snap.docs.map(doc=>({id:doc.id,...doc.data()})).sort((a,b)=>Number(a.ordem||0)-Number(b.ordem||0));
+    }catch(e){console.warn('Não foi possível carregar barbeiros do Firebase',e);barbeiros=[]}
     if(!barbeiros.length)barbeiros=cfg.barbeirosPadrao||[];
     $('barbeiroSelect').innerHTML=barbeiros.map(item=>`<option value="${item.id}">${item.nome}</option>`).join('');
   }
 
-  async function carregarCatalogo(){try{await Promise.all([carregarServicos(),carregarBarbeiros()])}catch(e){console.error(e);mostrarMensagem('Não foi possível carregar os dados da barbearia agora.','erro')}}
+  async function carregarCatalogo(){try{carregarServicos();await carregarBarbeiros()}catch(e){console.error(e);mostrarMensagem('Não foi possível carregar os dados da barbearia agora.','erro')}}
 
   async function horariosOcupados(){
     const data=$('dataAgendamento')?.value,barbeiro=$('barbeiroSelect')?.value;
@@ -72,7 +72,7 @@
 
   async function salvarAgendamento(d){
     const s=servicos.find(x=>String(x.id)===String(d.servico));
-    await db.collection('agendamentos').add({nome:d.nome,telefone:telefoneLimpo(d.telefone),servico_id:d.servico,barbeiro_id:d.barbeiro,data:d.data,hora:d.hora,observacao:d.obs||'',status:'pendente',criado_em:firebase.firestore.FieldValue.serverTimestamp(),valor:Number(s?.valor||0)});
+    await db.collection('agendamentos').add({nome:d.nome,telefone:telefoneLimpo(d.telefone),servico_id:d.servico,servico_nome:s?.nome||d.servico,duracao_minutos:Number(s?.duracao_minutos||0),barbeiro_id:d.barbeiro,data:d.data,hora:d.hora,observacao:d.obs||'',status:'pendente',criado_em:firebase.firestore.FieldValue.serverTimestamp(),valor:Number(s?.valor||0)});
   }
 
   async function enviarAgendamento(e){
@@ -88,7 +88,7 @@
     $('linkWhatsappTopo').href=`https://wa.me/${String(cfg.whatsapp||'').replace(/\D/g,'')}`;
     $('linkRota').href=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cfg.endereco||cfg.nome||'')}`;
     $('clienteTelefone').addEventListener('input',e=>e.target.value=formatarTelefone(e.target.value));$('dataAgendamento').addEventListener('change',gerarHorarios);$('barbeiroSelect').addEventListener('change',gerarHorarios);$('formAgendamento').addEventListener('submit',enviarAgendamento);
-    $('statusSistema').textContent='Agendamento automático';$('statusDetalhe').textContent='Ao concluir, o horário fica reservado imediatamente, sem necessidade de aprovação.';
+    $('statusSistema').textContent='Agendamento automático';$('statusDetalhe').textContent='Serviços e preços atualizados pelo app. O horário fica reservado imediatamente, sem necessidade de aprovação.';
   }
 
   window.addEventListener('DOMContentLoaded',async()=>{prepararTela();await carregarConfiguracoes();await carregarCatalogo();await gerarHorarios()});
