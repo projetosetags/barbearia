@@ -20,6 +20,7 @@
   const minutos = h => {const [hh,mm]=String(h).split(':').map(Number);return hh*60+mm};
   const horaTexto = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
   const diaSemana = data => new Date(`${data}T12:00:00`).getDay();
+  const idReserva = (data,barbeiro,hora) => `${data}_${String(barbeiro||'barbeiro').replace(/[^a-zA-Z0-9_-]/g,'-')}_${String(hora||'').slice(0,5).replace(':','-')}`;
 
   function mostrarMensagem(texto,tipo='ok'){const el=$('mensagem');if(!el)return;el.textContent=texto;el.className=`mensagem ${tipo}`}
 
@@ -73,7 +74,10 @@
     if(!data||!barbeiro)return [];
     try{
       const snap=await db.collection('agendamentos').where('data','==',data).where('barbeiro_id','==',barbeiro).get();
-      return snap.docs.map(doc=>doc.data()).filter(item=>['pendente','confirmado','em_atendimento'].includes(item.status)).map(item=>({inicio:minutos(String(item.hora).slice(0,5)),duracao:Number(item.duracao_minutos||30)}));
+      return snap.docs.map(doc=>doc.data())
+        .filter(item=>!['cancelado','finalizado'].includes(String(item.status||'pendente')))
+        .map(item=>({inicio:minutos(String(item.hora||item.hora_solicitada||'').slice(0,5)),duracao:Number(item.duracao_minutos||30)}))
+        .filter(item=>Number.isFinite(item.inicio));
     }catch(e){console.warn('Consulta pública de horários indisponível',e);return []}
   }
 
@@ -106,7 +110,8 @@
 
   async function salvarAgendamento(d){
     const s=servicos.find(x=>String(x.id)===String(d.servico));
-    await db.collection('agendamentos').add({nome:d.nome,telefone:telefoneLimpo(d.telefone),servico_id:d.servico,servico_nome:s?.nome||d.servico,duracao_minutos:Number(s?.duracao_minutos||0),barbeiro_id:d.barbeiro,data:d.data,hora:d.hora,observacao:d.obs||'',status:'pendente',criado_em:firebase.firestore.FieldValue.serverTimestamp(),valor:Number(s?.valor||0)});
+    const ref=db.collection('agendamentos').doc(idReserva(d.data,d.barbeiro,d.hora));
+    await ref.set({nome:d.nome,telefone:telefoneLimpo(d.telefone),servico_id:d.servico,servico_nome:s?.nome||d.servico,duracao_minutos:Number(s?.duracao_minutos||0),barbeiro_id:d.barbeiro,data:d.data,hora:d.hora,hora_solicitada:d.hora,observacao:d.obs||'',status:'pendente',criado_em:firebase.firestore.FieldValue.serverTimestamp(),valor:Number(s?.valor||0)});
   }
 
   async function enviarAgendamento(e){
@@ -114,7 +119,7 @@
     if(!d.servico){mostrarMensagem('Primeiro toque em um dos serviços acima.','erro');$('cardsServicos')?.scrollIntoView({behavior:'smooth',block:'center'});return}
     if(!d.nome||telefoneLimpo(d.telefone).length<10||!d.barbeiro||!d.data||!d.hora){mostrarMensagem('Confira nome, WhatsApp, data e horário.','erro');return}
     const original=btn.innerHTML;btn.disabled=true;btn.textContent='Reservando...';
-    try{await salvarAgendamento(d);mostrarMensagem('Agendamento confirmado automaticamente. Seu horário já está reservado.','ok');abrirWhatsApp(mensagemWhatsApp(d));await gerarHorarios()}catch(err){console.error(err);mostrarMensagem('Não foi possível registrar o agendamento agora.','erro')}finally{btn.disabled=false;btn.innerHTML=original}
+    try{await salvarAgendamento(d);mostrarMensagem('Agendamento confirmado automaticamente. Seu horário já está reservado.','ok');abrirWhatsApp(mensagemWhatsApp(d));await gerarHorarios()}catch(err){console.error(err);await gerarHorarios();mostrarMensagem('Este horário já foi reservado por outra pessoa. Escolha outro horário disponível.','erro')}finally{btn.disabled=false;btn.innerHTML=original}
   }
 
   function prepararTela(){
