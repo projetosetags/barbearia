@@ -10,6 +10,20 @@
 
   if (!firebase.apps.length) firebase.initializeApp(fb);
   const db = firebase.firestore();
+  const auth = firebase.auth();
+let usuarioAtual = null;
+
+async function garantirUsuario(){
+  if(auth.currentUser){
+    usuarioAtual = auth.currentUser;
+    return usuarioAtual;
+  }
+
+  const credencial = await auth.signInAnonymously();
+  usuarioAtual = credencial.user;
+
+  return usuarioAtual;
+}
   let servicos = [];
   let barbeiros = [];
 
@@ -108,13 +122,13 @@
 
   function abrirWhatsApp(texto){const numero=String(cfg.whatsapp||'').replace(/\D/g,'');if(numero)window.open(`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`,'_blank','noopener')}
 
- async function buscarAgendamentoDoCliente(data, telefone){
-  const tel = telefoneLimpo(telefone);
+async function buscarAgendamentoDoCliente(data, telefone){
+  await garantirUsuario();
 
   const snap = await db
     .collection('agendamentos')
+    .where('owner_uid','==',usuarioAtual.uid)
     .where('data','==',data)
-    .where('telefone','==',tel)
     .get();
 
   const ativos = snap.docs
@@ -128,7 +142,9 @@
   if(!ativos.length) return null;
 
   ativos.sort((a,b)=>
-    String(a.hora || '').localeCompare(String(b.hora || ''))
+    String(a.hora || '').localeCompare(
+      String(b.hora || '')
+    )
   );
 
   return ativos[0];
@@ -203,6 +219,8 @@ async function salvarNovoAgendamento(d){
     throw new Error('HORARIO_OCUPADO');
   }
 
+  await garantirUsuario();
+
   await ref.set({
     nome:d.nome,
     telefone:telefoneLimpo(d.telefone),
@@ -227,11 +245,15 @@ async function salvarNovoAgendamento(d){
     atualizado_em:
       firebase.firestore.FieldValue.serverTimestamp(),
 
-    valor:Number(s?.valor || 0)
+    valor:Number(s?.valor || 0),
+
+    owner_uid: usuarioAtual.uid
   });
 }
 
 async function alterarAgendamento(antigo,d){
+  await garantirUsuario();
+
   const s = servicos.find(
     x => String(x.id) === String(d.servico)
   );
@@ -278,7 +300,9 @@ async function alterarAgendamento(antigo,d){
     atualizado_em:
       firebase.firestore.FieldValue.serverTimestamp(),
 
-    valor:Number(s?.valor || 0)
+    valor:Number(s?.valor || 0),
+
+    owner_uid: usuarioAtual.uid
   };
 
   if(novoId === antigo.id){
