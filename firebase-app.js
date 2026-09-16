@@ -169,59 +169,85 @@ function aindaPodeAlterar(agendamento){
   return horario.getTime() > Date.now();
 }
 
-async function horarioOcupadoPorOutro(data,barbeiro,hora,ignorarId=null){
-  const snap = await db
-    .collection('agendamentos')
-    .where('data','==',data)
-    .where('barbeiro_id','==',barbeiro)
-    .get();
+async function horarioOcupadoPorOutro(
+  data,
+  barbeiro,
+  hora,
+  ignorarId = null
+){
+  await garantirUsuario();
 
   const novoInicio = minutos(hora);
-  const novoServico = servicoAtual();
-  const novaDuracao = Number(novoServico?.duracao_minutos || 30);
+  const novaDuracao =
+    Number(servicoAtual()?.duracao_minutos || 30);
 
-  return snap.docs.some(doc=>{
-    if(ignorarId && doc.id===ignorarId) return false;
+  try{
+    const snap = await db
+      .collection('ocupacoes')
+      .where('data','==',data)
+      .where('barbeiro_id','==',barbeiro)
+      .get();
 
-    const item = doc.data();
+    return snap.docs.some(doc=>{
+      const item = doc.data();
 
-    if(
-      ['cancelado','finalizado'].includes(
-        String(item.status || '').toLowerCase()
-      )
-    ) return false;
+      if(
+        ignorarId &&
+        item.agendamento_id === ignorarId
+      ){
+        return false;
+      }
 
-    const inicio = minutos(
-      String(item.hora || item.hora_solicitada || '').slice(0,5)
+      const inicio = minutos(
+        String(item.hora || '').slice(0,5)
+      );
+
+      const duracao =
+        Number(item.duracao_minutos || 30);
+
+      return (
+        novoInicio < inicio + duracao &&
+        novoInicio + novaDuracao > inicio
+      );
+    });
+
+  }catch(err){
+    console.error(
+      'Erro ao consultar disponibilidade:',
+      err
     );
 
-    const duracao = Number(item.duracao_minutos || 30);
-
-    return (
-      novoInicio < inicio + duracao &&
-      novoInicio + novaDuracao > inicio
-    );
-  });
+    throw err;
+  }
 }
 
 async function salvarNovoAgendamento(d){
+  await garantirUsuario();
+
   const s = servicos.find(
     x => String(x.id) === String(d.servico)
   );
 
-  const ref = db
+  const agendamentoId =
+    idReserva(d.data,d.barbeiro,d.hora);
+
+  const refAgendamento = db
     .collection('agendamentos')
-    .doc(idReserva(d.data,d.barbeiro,d.hora));
+    .doc(agendamentoId);
 
-  const existente = await ref.get();
+  const refOcupacao = db
+    .collection('ocupacoes')
+    .doc(agendamentoId);
 
-  if(existente.exists){
+  const existeOcupacao = await refOcupacao.get();
+
+  if(existeOcupacao.exists){
     throw new Error('HORARIO_OCUPADO');
   }
 
-  await garantirUsuario();
+  const batch = db.batch();
 
-  await ref.set({
+  batch.set(refAgendamento,{
     nome:d.nome,
     telefone:telefoneLimpo(d.telefone),
 
@@ -247,8 +273,27 @@ async function salvarNovoAgendamento(d){
 
     valor:Number(s?.valor || 0),
 
-    owner_uid: usuarioAtual.uid
+    owner_uid:usuarioAtual.uid
   });
+
+  batch.set(refOcupacao,{
+    agendamento_id:agendamentoId,
+
+    data:d.data,
+    hora:d.hora,
+
+    barbeiro_id:d.barbeiro,
+
+    duracao_minutos:
+      Number(s?.duracao_minutos || 30),
+
+    owner_uid:usuarioAtual.uid,
+
+    criado_em:
+      firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  await batch.commit();
 }
 
 async function alterarAgendamento(antigo,d){
@@ -269,17 +314,29 @@ async function alterarAgendamento(antigo,d){
     throw new Error('HORARIO_OCUPADO');
   }
 
-  const refAntigo = db
-    .collection('agendamentos')
-    .doc(antigo.id);
-
   const novoId = idReserva(
     d.data,
     d.barbeiro,
     d.hora
   );
 
-  const dados = {
+  const refAgendamentoAntigo = db
+    .collection('agendamentos')
+    .doc(antigo.id);
+
+  const refOcupacaoAntiga = db
+    .collection('ocupacoes')
+    .doc(antigo.id);
+
+  const refAgendamentoNovo = db
+    .collection('agendamentos')
+    .doc(novoId);
+
+  const refOcupacaoNova = db
+    .collection('ocupacoes')
+    .doc(novoId);
+
+  const dadosAgendamento = {
     nome:d.nome,
     telefone:telefoneLimpo(d.telefone),
 
@@ -302,34 +359,90 @@ async function alterarAgendamento(antigo,d){
 
     valor:Number(s?.valor || 0),
 
-    owner_uid: usuarioAtual.uid
+    owner_uid:usuarioAtual.uid
   };
 
+  const dadosOcupacao = {
+    agendamento_id:novoId,
+
+    data:d.data,
+    hora:d.hora,
+
+    barbeiro_id:d.barbeiro,
+
+    duracao_minutos:
+      Number(s?.duracao_minutos || 30),
+
+    owner_uid:usuarioAtual.uid,
+
+    atualizado_em:
+      firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  /*
+    Mesmo horário/documento.
+    Apenas atualiza os dados.
+  */
   if(novoId === antigo.id){
-    await refAntigo.update(dados);
+
+    const batch = db.batch();
+
+    batch.update(
+      refAgendamentoAntigo,
+      dadosAgendamento
+    );
+
+    batch.set(
+      refOcupacaoAntiga,
+      {
+        ...dadosOcupacao,
+        criado_em:
+          firebase.firestore.FieldValue.serverTimestamp()
+      },
+      {merge:true}
+    );
+
+    await batch.commit();
+
     return;
   }
 
-  const novoRef = db
-    .collection('agendamentos')
-    .doc(novoId);
+  /*
+    Mudança para outro horário.
+    Primeiro verifica se a nova ocupação existe.
+  */
+  const existeNovaOcupacao =
+    await refOcupacaoNova.get();
 
-  const existeNovo = await novoRef.get();
-
-  if(existeNovo.exists){
+  if(existeNovaOcupacao.exists){
     throw new Error('HORARIO_OCUPADO');
   }
 
   const batch = db.batch();
 
-  batch.set(novoRef,{
-    ...dados,
-    criado_em:
-      antigo.criado_em ||
-      firebase.firestore.FieldValue.serverTimestamp()
-  });
+  batch.set(
+    refAgendamentoNovo,
+    {
+      ...dadosAgendamento,
 
-  batch.delete(refAntigo);
+      criado_em:
+        antigo.criado_em ||
+        firebase.firestore.FieldValue.serverTimestamp()
+    }
+  );
+
+  batch.set(
+    refOcupacaoNova,
+    {
+      ...dadosOcupacao,
+
+      criado_em:
+        firebase.firestore.FieldValue.serverTimestamp()
+    }
+  );
+
+  batch.delete(refAgendamentoAntigo);
+  batch.delete(refOcupacaoAntiga);
 
   await batch.commit();
 }
