@@ -221,6 +221,23 @@ async function horarioOcupadoPorOutro(
   }
 }
 
+async function registrarCliente(d){
+  try{
+    await garantirUsuario();
+    const telefone=telefoneLimpo(d.telefone);
+    if(!telefone)return;
+    await db.collection('clientes').doc('tel_'+telefone).set({
+      nome:d.nome,
+      telefone,
+      owner_uid:usuarioAtual.uid,
+      atualizado_em:firebase.firestore.FieldValue.serverTimestamp(),
+      criado_por:'cliente'
+    },{merge:true});
+  }catch(e){
+    console.warn('Cadastro do cliente não atualizado:',e);
+  }
+}
+
 async function salvarNovoAgendamento(d){
   await garantirUsuario();
 
@@ -575,6 +592,7 @@ async function alterarAgendamento(antigo,d){
         existente,
         d
       );
+      await registrarCliente(d);
 
       mostrarMensagem(
         'Agendamento alterado com sucesso. O horário anterior foi substituído.',
@@ -617,6 +635,7 @@ async function alterarAgendamento(antigo,d){
     btn.textContent = 'Reservando...';
 
     await salvarNovoAgendamento(d);
+    await registrarCliente(d);
 
     mostrarMensagem(
       'Agendamento confirmado automaticamente. Seu horário já está reservado.',
