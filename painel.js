@@ -28,7 +28,72 @@ function preencherServicos(){const sel=$('editServico');sel.innerHTML=servicos.m
 function abrirNovo(){preencherServicos();$('modalTitulo').textContent='Novo agendamento';$('editId').value='';$('editNome').value='';$('editTelefone').value='';$('editData').value=hoje();$('editHora').value='09:00';$('editStatus').value='pendente';if(servicos[0]){$('editServico').value=servicos[0].id;$('editValor').value=servicos[0].valor;$('editDuracao').value=servicos[0].duracao}$('btnExcluir').classList.add('hidden');$('modalAgendamento').classList.remove('hidden')}
 function abrirEdicao(id){const x=itensAtuais.find(i=>i.id===id);if(!x)return;preencherServicos();$('modalTitulo').textContent='Editar agendamento';$('editId').value=id;$('editNome').value=x.nome||'';$('editTelefone').value=x.telefone||'';$('editServico').value=x.servico_id||servicos[0]?.id||'';$('editData').value=x.data||hoje();$('editHora').value=String(x.hora||'').slice(0,5);$('editStatus').value=x.status||'pendente';$('editValor').value=Number(x.valor||0);$('editDuracao').value=Number(x.duracao_minutos||30);$('btnExcluir').classList.remove('hidden');$('modalAgendamento').classList.remove('hidden')}
 function fecharModal(){$('modalAgendamento').classList.add('hidden')}
-async function salvar(){const id=$('editId').value;const s=servicos.find(x=>x.id===$('editServico').value);const dados={nome:$('editNome').value.trim(),telefone:$('editTelefone').value.replace(/\D/g,''),servico_id:$('editServico').value,servico_nome:s?.nome||$('editServico').value,duracao_minutos:Number($('editDuracao').value||30),barbeiro_id:'leandro-david',data:$('editData').value,hora:$('editHora').value,observacao:'',valor:Number($('editValor').value||0)};if(!dados.nome||!dados.data||!dados.hora)return alert('Preencha nome, data e horário.');try{if(id){dados.status=$('editStatus').value;await db.collection('agendamentos').doc(id).update(dados)}else{dados.status='pendente';dados.criado_em=firebase.firestore.FieldValue.serverTimestamp();await db.collection('agendamentos').add(dados)}fecharModal();await carregar()}catch(e){console.error(e);alert('Não foi possível salvar. Verifique as regras do Firebase.') }}
-async function excluir(id){if(!confirm('Excluir este agendamento?'))return;try{await db.collection('agendamentos').doc(id).delete();fecharModal();await carregar()}catch(e){console.error(e);alert('Não foi possível excluir.')}}
-window.addEventListener('DOMContentLoaded',()=>{if(!iniciar()){mensagem('Firebase não configurado.','erro');return}$('btnEntrar').onclick=async()=>{const email=emailDoUsuario($('email').value),senha=$('senha').value;if(!autorizado(email))return mensagem('Usuário sem acesso ao painel.','erro');try{await auth.signInWithEmailAndPassword(email,senha)}catch(e){console.error(e);mensagem('Usuário ou senha inválidos.','erro')}};$('btnSair').onclick=()=>auth.signOut();$('fHoje').onclick=()=>setModo('hoje');$('fSemana').onclick=()=>setModo('semana');$('fPersonalizado').onclick=()=>setModo('personalizado');$('btnAplicarPeriodo').onclick=carregar;$('btnAtualizar').onclick=carregar;$('btnNovo').onclick=abrirNovo;$('btnFecharModal').onclick=fecharModal;$('btnCancelarModal').onclick=fecharModal;$('btnSalvar').onclick=salvar;$('btnExcluir').onclick=()=>excluir($('editId').value);const [si,sf]=periodoSemana();$('dataInicio').value=si;$('dataFim').value=sf;auth.onAuthStateChanged(async user=>{if(user){if(!autorizado(user.email)){await auth.signOut();return}$('loginWrap').classList.add('hidden');$('painel').classList.remove('hidden');$('perfil').textContent=user.email.toLowerCase()===EMAIL_ADMIN?'Administrador Total':'Leandro';carregar();setInterval(carregar,60000)}else{$('painel').classList.add('hidden');$('loginWrap').classList.remove('hidden')}})});
+function idReservaAdmin(data,barbeiro,hora){return `${data}_${String(barbeiro||'leandro-david').replace(/[^a-zA-Z0-9_-]/g,'-')}_${String(hora||'').slice(0,5).replace(':','-')}`}
+async function salvar(){
+  const id=$('editId').value;
+  const s=servicos.find(x=>x.id===$('editServico').value);
+  const user=auth.currentUser;
+  const dados={
+    nome:$('editNome').value.trim(),
+    telefone:$('editTelefone').value.replace(/\D/g,''),
+    servico_id:$('editServico').value,
+    servico_nome:s?.nome||$('editServico').value,
+    duracao_minutos:Number($('editDuracao').value||30),
+    barbeiro_id:'leandro-david',
+    data:$('editData').value,
+    hora:$('editHora').value,
+    hora_solicitada:$('editHora').value,
+    observacao:'',
+    valor:Number($('editValor').value||0),
+    status:$('editStatus').value||'pendente',
+    owner_uid:user?.uid||''
+  };
+  if(!dados.nome||!dados.data||!dados.hora)return alert('Preencha nome, data e horário.');
+  try{
+    const novoId=idReservaAdmin(dados.data,dados.barbeiro_id,dados.hora);
+    const refNovo=db.collection('agendamentos').doc(novoId);
+    const occNovo=db.collection('ocupacoes').doc(novoId);
+
+    if(!id){
+      const tel=dados.telefone;
+      const mesmoDia=await db.collection('agendamentos').where('data','==',dados.data).get();
+      const duplicado=mesmoDia.docs.some(d=>{
+        const x=d.data();
+        return String(x.telefone||'')===tel && !['cancelado'].includes(String(x.status||''));
+      });
+      if(duplicado && !confirm('Este cliente já possui agendamento neste dia. Deseja continuar mesmo assim?'))return;
+
+      const existe=await occNovo.get();
+      if(existe.exists)return alert('Este horário já está ocupado.');
+      const batch=db.batch();
+      batch.set(refNovo,{...dados,criado_em:firebase.firestore.FieldValue.serverTimestamp(),atualizado_em:firebase.firestore.FieldValue.serverTimestamp()});
+      batch.set(occNovo,{agendamento_id:novoId,data:dados.data,hora:dados.hora,barbeiro_id:dados.barbeiro_id,duracao_minutos:dados.duracao_minutos,owner_uid:dados.owner_uid,criado_em:firebase.firestore.FieldValue.serverTimestamp()});
+      await batch.commit();
+    }else{
+      const antigo=itensAtuais.find(x=>x.id===id);
+      const mudouId=novoId!==id;
+      if(mudouId){
+        const existe=await occNovo.get();
+        if(existe.exists)return alert('Este horário já está ocupado.');
+      }
+      const batch=db.batch();
+      const refAntigo=db.collection('agendamentos').doc(id);
+      const occAntigo=db.collection('ocupacoes').doc(id);
+      if(dados.status==='cancelado'||dados.status==='finalizado'){
+        batch.set(mudouId?refNovo:refAntigo,{...dados,atualizado_em:firebase.firestore.FieldValue.serverTimestamp(),criado_em:antigo?.criado_em||firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+        batch.delete(occAntigo);
+        if(mudouId)batch.delete(refAntigo);
+      }else{
+        batch.set(refNovo,{...dados,atualizado_em:firebase.firestore.FieldValue.serverTimestamp(),criado_em:antigo?.criado_em||firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+        batch.set(occNovo,{agendamento_id:novoId,data:dados.data,hora:dados.hora,barbeiro_id:dados.barbeiro_id,duracao_minutos:dados.duracao_minutos,owner_uid:dados.owner_uid,atualizado_em:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+        if(mudouId){batch.delete(refAntigo);batch.delete(occAntigo)}
+      }
+      await batch.commit();
+    }
+    fecharModal();
+    await carregar();
+  }catch(e){console.error(e);alert('Não foi possível salvar. Verifique se o horário está livre e as regras do Firebase.')}
+}
+async function excluir(id){if(!confirm('Excluir este agendamento?'))return;try{const batch=db.batch();batch.delete(db.collection('agendamentos').doc(id));batch.delete(db.collection('ocupacoes').doc(id));await batch.commit();fecharModal();await carregar()}catch(e){console.error(e);alert('Não foi possível excluir.')}}
+window.addEventListener('DOMContentLoaded',()=>{if(!iniciar()){mensagem('Firebase não configurado.','erro');return}$('btnEntrar').onclick=async()=>{const email=emailDoUsuario($('email').value),senha=$('senha').value;if(!autorizado(email))return mensagem('Usuário sem acesso ao painel.','erro');try{await auth.signInWithEmailAndPassword(email,senha)}catch(e){console.error(e);mensagem('Usuário ou senha inválidos.','erro')}};$('btnSair').onclick=()=>auth.signOut();$('fHoje').onclick=()=>setModo('hoje');$('fSemana').onclick=()=>setModo('semana');$('fPersonalizado').onclick=()=>setModo('personalizado');$('btnAplicarPeriodo').onclick=carregar;$('btnAtualizar').onclick=carregar;$('btnNovo').onclick=abrirNovo;$('btnCompartilharCliente').onclick=async()=>{const url='https://projetosetags.github.io/barbearia/';try{if(navigator.share){await navigator.share({title:'Barbearia Leandro David',text:'Agende seu horário aqui:',url})}else{await navigator.clipboard.writeText(url);alert('Link do app copiado.')}}catch(_){}};$('btnFecharModal').onclick=fecharModal;$('btnCancelarModal').onclick=fecharModal;$('btnSalvar').onclick=salvar;$('btnExcluir').onclick=()=>excluir($('editId').value);const [si,sf]=periodoSemana();$('dataInicio').value=si;$('dataFim').value=sf;auth.onAuthStateChanged(async user=>{if(user){if(!autorizado(user.email)){await auth.signOut();return}$('loginWrap').classList.add('hidden');$('painel').classList.remove('hidden');$('perfil').textContent=user.email.toLowerCase()===EMAIL_ADMIN?'Administrador Total':'Leandro';carregar();setInterval(carregar,60000)}else{$('painel').classList.add('hidden');$('loginWrap').classList.remove('hidden')}})});
 })();
