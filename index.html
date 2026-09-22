@@ -16,24 +16,24 @@
   <title>Barbearia Leandro David</title>
 
   <!-- APP / PWA -->
-  <link rel="manifest" href="manifest.json?v=64">
+  <link rel="manifest" href="manifest.json?v=65">
 
   <!-- ÍCONE IPHONE / TELA DE INÍCIO -->
   <link
     rel="apple-touch-icon"
-    href="assets/leandro-david.jpg?v=64"
+    href="assets/leandro-david.jpg?v=65"
   >
 
   <!-- ÍCONE NAVEGADOR -->
   <link
     rel="icon"
-    href="assets/leandro-david.jpg?v=64"
+    href="assets/leandro-david.jpg?v=65"
     type="image/jpeg"
   >
 
   <link
     rel="shortcut icon"
-    href="assets/leandro-david.jpg?v=64"
+    href="assets/leandro-david.jpg?v=65"
     type="image/jpeg"
   >
 
@@ -45,13 +45,13 @@
   >
   <meta
     property="og:image"
-    content="https://projetosetags.github.io/barbearia/assets/leandro-david.jpg?v=64"
+    content="https://projetosetags.github.io/barbearia/assets/leandro-david.jpg?v=65"
   >
 
   <!-- ESTILOS -->
-  <link rel="stylesheet" href="novo-style.css?v=64">
-  <link rel="stylesheet" href="services.css?v=64">
-  <link rel="stylesheet" href="client-brand.css?v=64">
+  <link rel="stylesheet" href="novo-style.css?v=65">
+  <link rel="stylesheet" href="services.css?v=65">
+  <link rel="stylesheet" href="client-brand.css?v=65">
 
   <link
     rel="stylesheet"
@@ -70,7 +70,7 @@
 
   <a class="brand" href="./">
     <img
-      src="assets/leandro-david.jpg?v=64"
+      src="assets/leandro-david.jpg?v=65"
       alt="Barbearia Leandro David"
     >
 
@@ -80,14 +80,17 @@
     </div>
   </a>
 
-  <a
-    class="whatsapp-top"
-    id="linkWhatsappTopo"
-    href="#"
-    target="_blank"
-  >
-    WhatsApp
-  </a>
+  <div class="top-client-actions">
+    <a
+      class="whatsapp-top"
+      id="linkWhatsappTopo"
+      href="#"
+      target="_blank"
+    >
+      WhatsApp
+    </a>
+    <a class="ceo-access" href="admin.html">Acesso Leandro</a>
+  </div>
 
 </header>
 
@@ -113,7 +116,7 @@
 
     <img
       class="hero-logo barber-photo"
-      src="assets/leandro-david.jpg?v=64"
+      src="assets/leandro-david.jpg?v=65"
       alt="Leandro David"
     >
 
@@ -126,7 +129,7 @@
     <div class="showcase-head">
 
       <img
-        src="assets/leandro-david.jpg?v=64"
+        src="assets/leandro-david.jpg?v=65"
         alt="Leandro David Barbearia"
         class="showcase-logo"
       >
@@ -418,7 +421,7 @@
 
       <img
         class="quick-photo"
-        src="assets/leandro-david.jpg?v=64"
+        src="assets/leandro-david.jpg?v=65"
         alt="Leandro David"
       >
 
@@ -459,6 +462,23 @@
 
   </section>
 
+
+  <!-- ACESSO RÁPIDO / COMPARTILHAMENTO -->
+  <section class="client-share">
+    <div class="client-share-copy">
+      <span class="tag">COMPARTILHE O APP</span>
+      <h2>Agendamento em um toque</h2>
+      <p>Envie este acesso para outro cliente ou peça para escanear o QR Code.</p>
+      <div class="client-share-actions">
+        <a class="share-link" href="https://projetosetags.github.io/barbearia/" target="_blank" rel="noopener">Abrir link do app</a>
+        <button class="share-link secondary-share" id="btnCompartilharApp" type="button">Compartilhar</button>
+      </div>
+    </div>
+    <div class="client-qr">
+      <img src="qr-cliente.svg?v=65" alt="QR Code do app da Barbearia Leandro David">
+      <small>Escaneie para agendar</small>
+    </div>
+  </section>
 
   <!-- INSTALAÇÃO -->
   <section class="install-guide">
@@ -547,17 +567,30 @@
 
 
 <!-- SCRIPTS -->
-<script src="config.js?v=64"></script>
-<script src="firebase-config.js?v=64"></script>
-<script src="icons.js?v=64"></script>
-<script src="firebase-app.js?v=64"></script>
+<script src="config.js?v=65"></script>
+<script src="firebase-config.js?v=65"></script>
+<script src="icons.js?v=65"></script>
+<script src="firebase-app.js?v=65"></script>
+<script>
+document.getElementById('btnCompartilharApp')?.addEventListener('click', async () => {
+  const url = 'https://projetosetags.github.io/barbearia/';
+  try {
+    if (navigator.share) {
+      await navigator.share({title:'Barbearia Leandro David', text:'Agende seu horário aqui:', url});
+    } else {
+      await navigator.clipboard.writeText(url);
+      alert('Link do app copiado.');
+    }
+  } catch (_) {}
+});
+</script>
 
 
 <!-- SERVICE WORKER -->
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
-    .register('sw.js?v=64')
+    .register('sw.js?v=65')
     .catch(() => {});
 }
 </script>
