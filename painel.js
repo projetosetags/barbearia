@@ -154,6 +154,38 @@ async function salvar(){
     await carregar();
   }catch(e){console.error(e);alert('Não foi possível salvar. Verifique se o horário está livre e as regras do Firebase.')}
 }
+async function qrPngBlobAdmin(){
+  const svgTexto=await fetch('qr-cliente.svg?v=67',{cache:'no-store'}).then(r=>r.text());
+  const svgBlob=new Blob([svgTexto],{type:'image/svg+xml'});
+  const svgUrl=URL.createObjectURL(svgBlob);
+  try{
+    const img=new Image();
+    await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=svgUrl});
+    const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=1200;
+    const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,1200,1200);ctx.drawImage(img,0,0,1200,1200);
+    return await new Promise(resolve=>canvas.toBlob(resolve,'image/png',1));
+  }finally{URL.revokeObjectURL(svgUrl)}
+}
+async function compartilharQrAdmin(){
+  const url='https://projetosetags.github.io/barbearia/';
+  try{
+    const blob=await qrPngBlobAdmin();
+    const arquivo=new File([blob],'qr-barbearia-leandro-david.png',{type:'image/png'});
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[arquivo]}))){
+      await navigator.share({title:'Barbearia Leandro David',text:'Escaneie o QR Code para agendar seu horário.',files:[arquivo],url});
+    }else{
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='qr-barbearia-leandro-david.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+      alert('QR Code salvo como imagem para você encaminhar.');
+    }
+  }catch(e){console.error(e);alert('Não foi possível compartilhar o QR Code agora.')}
+}
+async function baixarQrAdmin(){
+  try{const blob=await qrPngBlobAdmin();const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='qr-barbearia-leandro-david.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500)}catch(e){console.error(e);alert('Não foi possível gerar o QR Code agora.')}
+}
+async function copiarLinkAdmin(){
+  const url='https://projetosetags.github.io/barbearia/';
+  try{await navigator.clipboard.writeText(url);alert('Link do app copiado.')}catch(_){prompt('Copie o link do app:',url)}
+}
 async function excluir(id){if(!confirm('Excluir este agendamento?'))return;try{const batch=db.batch();batch.delete(db.collection('agendamentos').doc(id));batch.delete(db.collection('ocupacoes').doc(id));await batch.commit();fecharModal();await carregar()}catch(e){console.error(e);alert('Não foi possível excluir.')}}
-window.addEventListener('DOMContentLoaded',()=>{if(!iniciar()){mensagem('Firebase não configurado.','erro');return}$('btnEntrar').onclick=async()=>{const email=emailDoUsuario($('email').value),senha=$('senha').value;if(!autorizado(email))return mensagem('Usuário sem acesso ao painel.','erro');try{await auth.signInWithEmailAndPassword(email,senha)}catch(e){console.error(e);mensagem('Usuário ou senha inválidos.','erro')}};$('btnSair').onclick=()=>auth.signOut();$('fHoje').onclick=()=>setModo('hoje');$('fSemana').onclick=()=>setModo('semana');$('fPersonalizado').onclick=()=>setModo('personalizado');$('btnAplicarPeriodo').onclick=carregar;$('btnAtualizar').onclick=carregar;$('btnNovo').onclick=()=>abrirNovo();$('btnClientes').onclick=abrirClientes;$('btnFecharClientes').onclick=fecharClientes;$('btnSalvarCliente').onclick=salvarCadastroCliente;$('buscaCliente').oninput=renderClientes;$('clienteExistente').onchange=e=>{if(e.target.value)selecionarClienteExistente(e.target.value)};$('btnNovoClienteModal').onclick=()=>{$('clienteExistente').value='';$('editNome').value='';$('editTelefone').value='';};$('btnCompartilharCliente').onclick=async()=>{const url='https://projetosetags.github.io/barbearia/';try{if(navigator.share){await navigator.share({title:'Barbearia Leandro David',text:'Agende seu horário aqui:',url})}else{await navigator.clipboard.writeText(url);alert('Link do app copiado.')}}catch(_){}};$('btnFecharModal').onclick=fecharModal;$('btnCancelarModal').onclick=fecharModal;$('btnSalvar').onclick=salvar;$('btnExcluir').onclick=()=>excluir($('editId').value);const [si,sf]=periodoSemana();$('dataInicio').value=si;$('dataFim').value=sf;auth.onAuthStateChanged(async user=>{if(user){if(!autorizado(user.email)){await auth.signOut();return}$('loginWrap').classList.add('hidden');$('painel').classList.remove('hidden');$('perfil').textContent=user.email.toLowerCase()===EMAIL_ADMIN?'Administrador Total':'Leandro';carregarClientes();carregar();setInterval(carregar,60000)}else{$('painel').classList.add('hidden');$('loginWrap').classList.remove('hidden')}})});
+window.addEventListener('DOMContentLoaded',()=>{if(!iniciar()){mensagem('Firebase não configurado.','erro');return}$('btnEntrar').onclick=async()=>{const email=emailDoUsuario($('email').value),senha=$('senha').value;if(!autorizado(email))return mensagem('Usuário sem acesso ao painel.','erro');try{await auth.signInWithEmailAndPassword(email,senha)}catch(e){console.error(e);mensagem('Usuário ou senha inválidos.','erro')}};$('btnSair').onclick=()=>auth.signOut();$('fHoje').onclick=()=>setModo('hoje');$('fSemana').onclick=()=>setModo('semana');$('fPersonalizado').onclick=()=>setModo('personalizado');$('btnAplicarPeriodo').onclick=carregar;$('btnAtualizar').onclick=carregar;$('btnNovo').onclick=()=>abrirNovo();$('btnClientes').onclick=abrirClientes;$('btnFecharClientes').onclick=fecharClientes;$('btnSalvarCliente').onclick=salvarCadastroCliente;$('buscaCliente').oninput=renderClientes;$('clienteExistente').onchange=e=>{if(e.target.value)selecionarClienteExistente(e.target.value)};$('btnNovoClienteModal').onclick=()=>{$('clienteExistente').value='';$('editNome').value='';$('editTelefone').value='';};$('btnCompartilharCliente').onclick=()=>$('modalQrAdmin').classList.remove('hidden');$('btnFecharQrAdmin').onclick=()=>$('modalQrAdmin').classList.add('hidden');$('modalQrAdmin').onclick=e=>{if(e.target.id==='modalQrAdmin')$('modalQrAdmin').classList.add('hidden')};$('btnCompartilharQrAdmin').onclick=compartilharQrAdmin;$('btnBaixarQrAdmin').onclick=baixarQrAdmin;$('btnCopiarLinkAdmin').onclick=copiarLinkAdmin;$('btnFecharModal').onclick=fecharModal;$('btnCancelarModal').onclick=fecharModal;$('btnSalvar').onclick=salvar;$('btnExcluir').onclick=()=>excluir($('editId').value);const [si,sf]=periodoSemana();$('dataInicio').value=si;$('dataFim').value=sf;auth.onAuthStateChanged(async user=>{if(user){if(!autorizado(user.email)){await auth.signOut();return}$('loginWrap').classList.add('hidden');$('painel').classList.remove('hidden');$('perfil').textContent=user.email.toLowerCase()===EMAIL_ADMIN?'Administrador Total':'Leandro';carregarClientes();carregar();setInterval(carregar,60000)}else{$('painel').classList.add('hidden');$('loginWrap').classList.remove('hidden')}})});
 })();
