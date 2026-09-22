@@ -61,7 +61,10 @@ async function salvar(){
         const x=d.data();
         return String(x.telefone||'')===tel && !['cancelado'].includes(String(x.status||''));
       });
-      if(duplicado && !confirm('Este cliente já possui agendamento neste dia. Deseja continuar mesmo assim?'))return;
+      if(duplicado){
+        alert('Este cliente já possui um agendamento neste dia. Edite o agendamento existente em vez de criar outro.');
+        return;
+      }
 
       const existe=await occNovo.get();
       if(existe.exists)return alert('Este horário já está ocupado.');
