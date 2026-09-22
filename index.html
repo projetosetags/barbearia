@@ -16,24 +16,24 @@
   <title>Barbearia Leandro David</title>
 
   <!-- APP / PWA -->
-  <link rel="manifest" href="manifest.json?v=65">
+  <link rel="manifest" href="manifest.json?v=67">
 
   <!-- ÍCONE IPHONE / TELA DE INÍCIO -->
   <link
     rel="apple-touch-icon"
-    href="assets/leandro-david.jpg?v=65"
+    href="assets/leandro-david.jpg?v=67"
   >
 
   <!-- ÍCONE NAVEGADOR -->
   <link
     rel="icon"
-    href="assets/leandro-david.jpg?v=65"
+    href="assets/leandro-david.jpg?v=67"
     type="image/jpeg"
   >
 
   <link
     rel="shortcut icon"
-    href="assets/leandro-david.jpg?v=65"
+    href="assets/leandro-david.jpg?v=67"
     type="image/jpeg"
   >
 
@@ -45,13 +45,13 @@
   >
   <meta
     property="og:image"
-    content="https://projetosetags.github.io/barbearia/assets/leandro-david.jpg?v=65"
+    content="https://projetosetags.github.io/barbearia/assets/leandro-david.jpg?v=67"
   >
 
   <!-- ESTILOS -->
-  <link rel="stylesheet" href="novo-style.css?v=65">
-  <link rel="stylesheet" href="services.css?v=65">
-  <link rel="stylesheet" href="client-brand.css?v=65">
+  <link rel="stylesheet" href="novo-style.css?v=67">
+  <link rel="stylesheet" href="services.css?v=67">
+  <link rel="stylesheet" href="client-brand.css?v=67">
 
   <link
     rel="stylesheet"
@@ -70,7 +70,7 @@
 
   <a class="brand" href="./">
     <img
-      src="assets/leandro-david.jpg?v=65"
+      src="assets/leandro-david.jpg?v=67"
       alt="Barbearia Leandro David"
     >
 
@@ -116,7 +116,7 @@
 
     <img
       class="hero-logo barber-photo"
-      src="assets/leandro-david.jpg?v=65"
+      src="assets/leandro-david.jpg?v=67"
       alt="Leandro David"
     >
 
@@ -129,7 +129,7 @@
     <div class="showcase-head">
 
       <img
-        src="assets/leandro-david.jpg?v=65"
+        src="assets/leandro-david.jpg?v=67"
         alt="Leandro David Barbearia"
         class="showcase-logo"
       >
@@ -421,7 +421,7 @@
 
       <img
         class="quick-photo"
-        src="assets/leandro-david.jpg?v=65"
+        src="assets/leandro-david.jpg?v=67"
         alt="Leandro David"
       >
 
@@ -471,11 +471,11 @@
       <p>Envie este acesso para outro cliente ou peça para escanear o QR Code.</p>
       <div class="client-share-actions">
         <a class="share-link" href="https://projetosetags.github.io/barbearia/" target="_blank" rel="noopener">Abrir link do app</a>
-        <button class="share-link secondary-share" id="btnCompartilharApp" type="button">Compartilhar</button>
+        <button class="share-link secondary-share" id="btnCompartilharApp" type="button">Ver / compartilhar QR Code</button>
       </div>
     </div>
     <div class="client-qr">
-      <img src="qr-cliente.svg?v=65" alt="QR Code do app da Barbearia Leandro David">
+      <img src="qr-cliente.svg?v=67" alt="QR Code do app da Barbearia Leandro David">
       <small>Escaneie para agendar</small>
     </div>
   </section>
@@ -551,6 +551,28 @@
 </main>
 
 
+<div id="modalQrCliente" class="qr-overlay hidden">
+  <div class="qr-modal">
+    <div class="qr-modal-head">
+      <div>
+        <span class="tag">ACESSO DO CLIENTE</span>
+        <h3>Compartilhar QR Code</h3>
+      </div>
+      <button id="btnFecharQrCliente" class="qr-close" type="button">✕</button>
+    </div>
+    <div class="qr-preview">
+      <img id="qrImagemCliente" src="qr-cliente.svg?v=67" alt="QR Code para acessar o app da Barbearia Leandro David">
+      <p>O cliente pode escanear este código para abrir o app de agendamento.</p>
+      <small>https://projetosetags.github.io/barbearia/</small>
+    </div>
+    <div class="qr-modal-actions">
+      <button id="btnCompartilharQrImagemCliente" class="share-link" type="button">Compartilhar QR Code</button>
+      <button id="btnBaixarQrCliente" class="share-link secondary-share" type="button">Baixar QR Code</button>
+      <button id="btnCopiarLinkCliente" class="share-link secondary-share" type="button">Copiar link</button>
+    </div>
+  </div>
+</div>
+
 <footer class="wrap footer compact-footer">
 
   <span>
@@ -567,22 +589,86 @@
 
 
 <!-- SCRIPTS -->
-<script src="config.js?v=65"></script>
-<script src="firebase-config.js?v=65"></script>
-<script src="icons.js?v=65"></script>
-<script src="firebase-app.js?v=65"></script>
+<script src="config.js?v=67"></script>
+<script src="firebase-config.js?v=67"></script>
+<script src="icons.js?v=67"></script>
+<script src="firebase-app.js?v=67"></script>
 <script>
-document.getElementById('btnCompartilharApp')?.addEventListener('click', async () => {
-  const url = 'https://projetosetags.github.io/barbearia/';
-  try {
-    if (navigator.share) {
-      await navigator.share({title:'Barbearia Leandro David', text:'Agende seu horário aqui:', url});
-    } else {
-      await navigator.clipboard.writeText(url);
-      alert('Link do app copiado.');
+(() => {
+  const APP_URL='https://projetosetags.github.io/barbearia/';
+  const QR_URL='qr-cliente.svg?v=67';
+  const $=id=>document.getElementById(id);
+
+  function abrirQr(){$('modalQrCliente')?.classList.remove('hidden')}
+  function fecharQr(){$('modalQrCliente')?.classList.add('hidden')}
+
+  async function qrPngBlob(){
+    const svgTexto=await fetch(QR_URL,{cache:'no-store'}).then(r=>r.text());
+    const svgBlob=new Blob([svgTexto],{type:'image/svg+xml'});
+    const svgUrl=URL.createObjectURL(svgBlob);
+    try{
+      const img=new Image();
+      await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=svgUrl});
+      const canvas=document.createElement('canvas');
+      canvas.width=1200;canvas.height=1200;
+      const ctx=canvas.getContext('2d');
+      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,1200,1200);
+      ctx.drawImage(img,0,0,1200,1200);
+      return await new Promise(resolve=>canvas.toBlob(resolve,'image/png',1));
+    } finally {
+      URL.revokeObjectURL(svgUrl);
     }
-  } catch (_) {}
-});
+  }
+
+  async function compartilharQr(){
+    try{
+      const blob=await qrPngBlob();
+      if(!blob)throw new Error('PNG indisponível');
+      const arquivo=new File([blob],'qr-barbearia-leandro-david.png',{type:'image/png'});
+      if(navigator.share && (!navigator.canShare || navigator.canShare({files:[arquivo]}))){
+        await navigator.share({
+          title:'Barbearia Leandro David',
+          text:'Escaneie o QR Code para agendar seu horário.',
+          files:[arquivo],
+          url:APP_URL
+        });
+      }else{
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download='qr-barbearia-leandro-david.png';
+        a.click();
+        setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+        alert('O QR Code foi preparado como imagem. Você pode encaminhá-lo pelo WhatsApp.');
+      }
+    }catch(e){
+      console.error(e);
+      alert('Não foi possível compartilhar a imagem agora. Use "Baixar QR Code" ou copie o link.');
+    }
+  }
+
+  async function baixarQr(){
+    try{
+      const blob=await qrPngBlob();
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='qr-barbearia-leandro-david.png';
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+    }catch(e){console.error(e);alert('Não foi possível gerar o QR Code agora.')}
+  }
+
+  async function copiarLink(){
+    try{await navigator.clipboard.writeText(APP_URL);alert('Link do app copiado.')}
+    catch(_){prompt('Copie o link do app:',APP_URL)}
+  }
+
+  $('btnCompartilharApp')?.addEventListener('click',abrirQr);
+  $('btnFecharQrCliente')?.addEventListener('click',fecharQr);
+  $('modalQrCliente')?.addEventListener('click',e=>{if(e.target.id==='modalQrCliente')fecharQr()});
+  $('btnCompartilharQrImagemCliente')?.addEventListener('click',compartilharQr);
+  $('btnBaixarQrCliente')?.addEventListener('click',baixarQr);
+  $('btnCopiarLinkCliente')?.addEventListener('click',copiarLink);
+})();
 </script>
 
 
@@ -590,7 +676,7 @@ document.getElementById('btnCompartilharApp')?.addEventListener('click', async (
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
-    .register('sw.js?v=65')
+    .register('sw.js?v=67')
     .catch(() => {});
 }
 </script>
