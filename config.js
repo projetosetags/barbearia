@@ -26,6 +26,10 @@ window.BARBEARIA_CONFIG={
     {id:'pigmentacao-cabelo',nome:'Pigmentação cabelo',duracao:25,valor:20},
     {id:'pigmentacao-barba',nome:'Pigmentação barba',duracao:25,valor:15}
   ],
+  planosMensais:[
+    {id:'mensal-cabelo',nome:'Mensalista • Cabelo',valor:100},
+    {id:'mensal-cabelo-barba',nome:'Mensalista • Cabelo e barba',valor:130}
+  ],
   barbeirosPadrao:[
     {id:'leandro-david',nome:'Leandro David'}
   ]
