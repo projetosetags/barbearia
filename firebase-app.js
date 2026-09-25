@@ -102,7 +102,8 @@ async function garantirUsuario(){
     try{const esp=await db.collection('horarios_especiais').doc(data).get();if(esp.exists){const x=esp.data();agendaDia={inicio:x.inicio,fim:x.fim}}}catch(e){console.warn('Horário especial indisponível',e)}
     if(!agendaDia){select.innerHTML='<option value="">Fechado neste dia</option>';return}
     const ocupados=await agendamentosOcupados();
-    let bloqueios=[];try{const bs=await db.collection('bloqueios').where('data','==',data).get();bloqueios=bs.docs.map(d=>d.data()).filter(x=>!x.barbeiro_id||x.barbeiro_id===$('barbeiroSelect')?.value)}catch(e){console.warn('Bloqueios indisponíveis',e)}
+    let bloqueios=[...(cfg.bloqueiosPadrao?.[diaSemana(data)]||[])];try{const bs=await db.collection('bloqueios').where('data','==',data).get();bloqueios.push(...bs.docs.map(d=>d.data()).filter(x=>!x.barbeiro_id||x.barbeiro_id===$('barbeiroSelect')?.value))}catch(e){console.warn('Bloqueios indisponíveis',e)}
+    try{const lib=await db.collection('liberacoes').doc(data).get();if(lib.exists){const ls=lib.data().periodos||[];bloqueios=bloqueios.filter(b=>!ls.some(l=>minutos(l.inicio)<=minutos(b.inicio)&&minutos(l.fim)>=minutos(b.fim)))}}catch(e){console.warn('Liberações indisponíveis',e)}
     const inicio=minutos(agendaDia.inicio),fim=minutos(agendaDia.fim),intervalo=Number(cfg.intervalo||30),duracao=Number(servicoAtual()?.duracao_minutos||30),agora=new Date(),horarios=[];
     for(let m=inicio;m+duracao<=fim;m+=intervalo){
       const h=horaTexto(m);
