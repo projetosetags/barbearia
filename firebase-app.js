@@ -98,14 +98,17 @@ async function garantirUsuario(){
   async function gerarHorarios(){
     const select=$('horaSolicitada');if(!select)return;
     const data=$('dataAgendamento')?.value;if(!data){select.innerHTML='<option value="">Escolha uma data</option>';return}
-    const agendaDia=cfg.horariosSemana?.[diaSemana(data)];
-    if(!agendaDia){select.innerHTML='<option value="">Fechado aos domingos</option>';return}
+    let agendaDia=cfg.horariosSemana?.[diaSemana(data)];
+    try{const esp=await db.collection('horarios_especiais').doc(data).get();if(esp.exists){const x=esp.data();agendaDia={inicio:x.inicio,fim:x.fim}}}catch(e){console.warn('Horário especial indisponível',e)}
+    if(!agendaDia){select.innerHTML='<option value="">Fechado neste dia</option>';return}
     const ocupados=await agendamentosOcupados();
+    let bloqueios=[];try{const bs=await db.collection('bloqueios').where('data','==',data).get();bloqueios=bs.docs.map(d=>d.data()).filter(x=>!x.barbeiro_id||x.barbeiro_id===$('barbeiroSelect')?.value)}catch(e){console.warn('Bloqueios indisponíveis',e)}
     const inicio=minutos(agendaDia.inicio),fim=minutos(agendaDia.fim),intervalo=Number(cfg.intervalo||30),duracao=Number(servicoAtual()?.duracao_minutos||30),agora=new Date(),horarios=[];
     for(let m=inicio;m+duracao<=fim;m+=intervalo){
       const h=horaTexto(m);
       const conflita=ocupados.some(o=>m<o.inicio+o.duracao && m+duracao>o.inicio);
-      if(conflita)continue;
+      const bloqueado=bloqueios.some(b=>m<minutos(b.fim) && m+duracao>minutos(b.inicio));
+      if(conflita||bloqueado)continue;
       if(data===hoje()){
         const alvo=new Date();alvo.setHours(Math.floor(m/60),m%60,0,0);
         if(alvo.getTime()<agora.getTime()+20*60000)continue;
