@@ -33,7 +33,7 @@ async function garantirUsuario(){
   const formatarTelefone = v => {const n=telefoneLimpo(v).slice(0,11);if(n.length<=2)return n;if(n.length<=7)return `(${n.slice(0,2)}) ${n.slice(2,3)} ${n.slice(3)}`;return `(${n.slice(0,2)}) ${n.slice(2,3)} ${n.slice(3,7)} ${n.slice(7)}`};
   const minutos = h => {const [hh,mm]=String(h).split(':').map(Number);return hh*60+mm};
   const horaTexto = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
-  const diaSemana = data => new Date(`${data}T12:00:00`).getDay();
+  const diaSemana = data => {const [ano,mes,dia]=String(data).split('-').map(Number);return new Date(ano,mes-1,dia,12,0,0).getDay()};
   const idReserva = (data,barbeiro,hora) => `${data}_${String(barbeiro||'barbeiro').replace(/[^a-zA-Z0-9_-]/g,'-')}_${String(hora||'').slice(0,5).replace(':','-')}`;
 
   function mostrarMensagem(texto,tipo='ok'){const el=$('mensagem');if(!el)return;el.textContent=texto;el.className=`mensagem ${tipo}`}
