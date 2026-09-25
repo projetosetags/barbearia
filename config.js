@@ -7,12 +7,20 @@ window.BARBEARIA_CONFIG={
   intervalo:30,
   horariosSemana:{
     0:null,
-    1:{inicio:'14:00',fim:'19:00'},
-    2:{inicio:'09:00',fim:'19:00'},
-    3:{inicio:'09:00',fim:'19:00'},
-    4:{inicio:'09:00',fim:'19:00'},
-    5:{inicio:'09:00',fim:'19:00'},
-    6:{inicio:'09:00',fim:'17:00'}
+    1:{inicio:'13:30',fim:'19:30'},
+    2:{inicio:'09:00',fim:'19:30'},
+    3:{inicio:'09:00',fim:'19:30'},
+    4:{inicio:'09:00',fim:'19:30'},
+    5:{inicio:'09:00',fim:'19:30'},
+    6:{inicio:'09:00',fim:'17:30'}
+  },
+  bloqueiosPadrao:{
+    1:[{inicio:'12:00',fim:'13:30',motivo:'Almoço'}],
+    2:[{inicio:'12:00',fim:'13:30',motivo:'Almoço'}],
+    3:[{inicio:'12:00',fim:'13:30',motivo:'Almoço'}],
+    4:[{inicio:'12:00',fim:'13:30',motivo:'Almoço'}],
+    5:[{inicio:'12:00',fim:'13:30',motivo:'Almoço'}],
+    6:[]
   },
   supabaseUrl:'',
   supabasePublishableKey:'',
