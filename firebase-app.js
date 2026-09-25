@@ -87,12 +87,13 @@ async function garantirUsuario(){
     const data=$('dataAgendamento')?.value,barbeiro=$('barbeiroSelect')?.value;
     if(!data||!barbeiro)return [];
     try{
-      const snap=await db.collection('agendamentos').where('data','==',data).where('barbeiro_id','==',barbeiro).get();
+      // A coleção ocupacoes é pública e não contém dados pessoais.
+      // Ela é a fonte correta para esconder horários de TODOS os clientes.
+      const snap=await db.collection('ocupacoes').where('data','==',data).where('barbeiro_id','==',barbeiro).get();
       return snap.docs.map(doc=>doc.data())
-        .filter(item=>!['cancelado','finalizado'].includes(String(item.status||'pendente')))
-        .map(item=>({inicio:minutos(String(item.hora||item.hora_solicitada||'').slice(0,5)),duracao:Number(item.duracao_minutos||30)}))
+        .map(item=>({inicio:minutos(String(item.hora||'').slice(0,5)),duracao:Number(item.duracao_minutos||30)}))
         .filter(item=>Number.isFinite(item.inicio));
-    }catch(e){console.warn('Consulta pública de horários indisponível',e);return []}
+    }catch(e){console.warn('Consulta pública de ocupações indisponível',e);return []}
   }
 
   async function gerarHorarios(){
