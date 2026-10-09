@@ -42,3 +42,11 @@ window.BARBEARIA_CONFIG={
     {id:'leandro-david',nome:'Leandro David'}
   ]
 };
+
+// Correção 09/10/2026: disponibilidade em tempo real e reserva atômica.
+(() => {
+  const s=document.createElement('script');
+  s.src='booking-fix.js?v=72';
+  s.async=false;
+  document.head.appendChild(s);
+})();
