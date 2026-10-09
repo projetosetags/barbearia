@@ -23,13 +23,21 @@
   }
 
   async function agendaDoDia(data){
-    let padrao = cfg.horariosSemana?.[diaSemana(data)] || null;
+    // A agenda semanal é a fonte principal. Um registro especial só fecha o dia
+    // quando isso estiver explicitamente marcado; registros antigos/incompletos
+    // não podem zerar os horários do cliente.
+    const padrao = cfg.horariosSemana?.[diaSemana(data)] || null;
     try{
       const doc = await db.collection('horarios_especiais').doc(data).get();
       if(doc.exists){
         const x=doc.data()||{};
-        if(x.fechado===true) return null;
-        if(/^\d{2}:\d{2}$/.test(x.inicio||'') && /^\d{2}:\d{2}$/.test(x.fim||'')) padrao={inicio:x.inicio,fim:x.fim};
+        if(x.fechado===true && x.ativo===true) return null;
+        if(
+          x.ativo===true &&
+          /^\d{2}:\d{2}$/.test(x.inicio||'') &&
+          /^\d{2}:\d{2}$/.test(x.fim||'') &&
+          min(x.fim)>min(x.inicio)
+        ) return {inicio:x.inicio,fim:x.fim};
       }
     }catch(e){ console.warn('Horário especial:',e); }
     return padrao;
@@ -141,8 +149,18 @@
     if(form) form.addEventListener('submit',enviar,true);
     $('dataAgendamento')?.addEventListener('change',atualizarHorarios);
     $('barbeiroSelect')?.addEventListener('change',atualizarHorarios);
-    document.querySelectorAll('.service-card[data-service]').forEach(card=>card.addEventListener('click',()=>setTimeout(atualizarHorarios,0)));
+    document.querySelectorAll('.service-card[data-service]').forEach(card=>card.addEventListener('click',()=>{
+      setTimeout(atualizarHorarios,0);
+      setTimeout(atualizarHorarios,350);
+      setTimeout(atualizarHorarios,900);
+    }));
+    // O app principal carrega catálogos de forma assíncrona. Reaplicamos a
+    // disponibilidade após essa carga para garantir que o select final fique
+    // sempre com os horários livres, e não com uma mensagem antiga.
     atualizarHorarios();
+    setTimeout(atualizarHorarios,250);
+    setTimeout(atualizarHorarios,800);
+    setTimeout(atualizarHorarios,1600);
 
     // Atualiza a lista quando outro cliente reserva/cancela no mesmo dia.
     let cancelar=null;
