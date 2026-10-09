@@ -43,10 +43,11 @@ window.BARBEARIA_CONFIG={
   ]
 };
 
-// Correção 09/10/2026: disponibilidade em tempo real e reserva atômica.
-(() => {
+// A correção precisa iniciar DEPOIS do aplicativo principal para que
+// a lista correta de horários não seja sobrescrita durante a abertura.
+window.addEventListener('load',()=>{
   const s=document.createElement('script');
-  s.src='booking-fix.js?v=72';
+  s.src='booking-fix.js?v=73';
   s.async=false;
-  document.head.appendChild(s);
-})();
+  document.body.appendChild(s);
+});
