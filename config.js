@@ -47,7 +47,7 @@ window.BARBEARIA_CONFIG={
 // a lista correta de horários não seja sobrescrita durante a abertura.
 window.addEventListener('load',()=>{
   const s=document.createElement('script');
-  s.src='booking-fix.js?v=73';
+  s.src='booking-fix.js?v=74';
   s.async=false;
   document.body.appendChild(s);
 });
