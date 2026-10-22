@@ -250,6 +250,8 @@ async function salvarNovoAgendamento(d){
     x => String(x.id) === String(d.servico)
   );
 
+  const duracao = Number(s?.duracao_minutos || 30);
+  const inicio = minutos(d.hora);
   const agendamentoId =
     idReserva(d.data,d.barbeiro,d.hora);
 
@@ -261,63 +263,70 @@ async function salvarNovoAgendamento(d){
     .collection('ocupacoes')
     .doc(agendamentoId);
 
-  const existeOcupacao = await refOcupacao.get();
+  const consultaOcupacoes = db
+    .collection('ocupacoes')
+    .where('data','==',d.data)
+    .where('barbeiro_id','==',d.barbeiro);
 
-  if(existeOcupacao.exists){
-    throw new Error('HORARIO_OCUPADO');
-  }
+  await db.runTransaction(async transaction => {
+    const [ocupacaoExata, ocupacoesDoDia] = await Promise.all([
+      transaction.get(refOcupacao),
+      transaction.get(consultaOcupacoes)
+    ]);
 
-  const batch = db.batch();
+    if(ocupacaoExata.exists){
+      throw new Error('HORARIO_OCUPADO');
+    }
 
-  batch.set(refAgendamento,{
-    nome:d.nome,
-    telefone:telefoneLimpo(d.telefone),
+    const conflito = ocupacoesDoDia.docs.some(doc => {
+      const ocupacao = doc.data();
+      const inicioOcupado = minutos(
+        String(ocupacao.hora || '').slice(0,5)
+      );
+      const duracaoOcupada = Number(
+        ocupacao.duracao_minutos || 30
+      );
 
-    servico_id:d.servico,
-    servico_nome:s?.nome || d.servico,
-    duracao_minutos:Number(s?.duracao_minutos || 30),
+      return inicio < inicioOcupado + duracaoOcupada &&
+        inicio + duracao > inicioOcupado;
+    });
 
-    barbeiro_id:d.barbeiro,
+    if(conflito){
+      throw new Error('HORARIO_OCUPADO');
+    }
 
-    data:d.data,
-    hora:d.hora,
-    hora_solicitada:d.hora,
+    const criadoEm =
+      firebase.firestore.FieldValue.serverTimestamp();
 
-    observacao:d.obs || '',
+    transaction.set(refAgendamento,{
+      nome:d.nome,
+      telefone:telefoneLimpo(d.telefone),
+      servico_id:d.servico,
+      servico_nome:s?.nome || d.servico,
+      duracao_minutos:duracao,
+      barbeiro_id:d.barbeiro,
+      data:d.data,
+      hora:d.hora,
+      hora_solicitada:d.hora,
+      observacao:d.obs || '',
+      status:'pendente',
+      criado_em:criadoEm,
+      atualizado_em:criadoEm,
+      valor:Number(s?.valor || 0),
+      owner_uid:usuarioAtual.uid
+    });
 
-    status:'pendente',
-
-    criado_em:
-      firebase.firestore.FieldValue.serverTimestamp(),
-
-    atualizado_em:
-      firebase.firestore.FieldValue.serverTimestamp(),
-
-    valor:Number(s?.valor || 0),
-
-    owner_uid:usuarioAtual.uid
+    transaction.set(refOcupacao,{
+      agendamento_id:agendamentoId,
+      data:d.data,
+      hora:d.hora,
+      barbeiro_id:d.barbeiro,
+      duracao_minutos:duracao,
+      owner_uid:usuarioAtual.uid,
+      criado_em:criadoEm
+    });
   });
-
-  batch.set(refOcupacao,{
-    agendamento_id:agendamentoId,
-
-    data:d.data,
-    hora:d.hora,
-
-    barbeiro_id:d.barbeiro,
-
-    duracao_minutos:
-      Number(s?.duracao_minutos || 30),
-
-    owner_uid:usuarioAtual.uid,
-
-    criado_em:
-      firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  await batch.commit();
 }
-
 async function alterarAgendamento(antigo,d){
   await garantirUsuario();
 
