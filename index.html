@@ -259,47 +259,22 @@
 
 
     <!-- PLANOS MENSAIS -->
-    <section class="monthly-plans">
+    <section class="monthly-plans" id="planosMensais">
       <div class="monthly-head">
         <span class="tag">PLANOS MENSAIS</span>
         <h3>Seja mensalista</h3>
-        <p>Praticidade para manter seu visual em dia.</p>
+        <p>Escolha o plano e agende o primeiro atendimento pelo sistema.</p>
       </div>
-
       <div class="monthly-grid">
-        <a class="monthly-card monthly-card-link"
-          href="https://wa.me/5548996684751?text=Ol%C3%A1%2C%20Leandro!%20Quero%20assinar%20o%20plano%20mensalista%20de%20Cabelo%20por%20R%24%20100%2C00."
-          target="_blank" rel="noopener">
-          <span class="monthly-icon">✂</span>
-          <div>
-            <strong>CABELO</strong>
-            <small>Plano mensal • toque para contratar</small>
-          </div>
-          <b>R$ 100,00</b>
-        </a>
-
-        <a class="monthly-card monthly-card-link featured"
-          href="https://wa.me/5548996684751?text=Ol%C3%A1%2C%20Leandro!%20Quero%20assinar%20o%20plano%20mensalista%20de%20Cabelo%20e%20Barba%20por%20R%24%20130%2C00."
-          target="_blank" rel="noopener">
-          <span class="monthly-icon">✦</span>
-          <div>
-            <strong>CABELO E BARBA</strong>
-            <small>Plano mensal • toque para contratar</small>
-          </div>
-          <b>R$ 130,00</b>
-        </a>
+        <button class="monthly-card monthly-card-link" type="button" data-plano-mensal="mensal-cabelo">
+          <span class="monthly-icon">✂</span><div><strong>CABELO</strong><small>Toque para escolher o horário</small></div><b>R$ 100,00/mês</b>
+        </button>
+        <button class="monthly-card monthly-card-link featured" type="button" data-plano-mensal="mensal-cabelo-barba">
+          <span class="monthly-icon">✦</span><div><strong>CABELO E BARBA</strong><small>Toque para escolher o horário</small></div><b>R$ 130,00/mês</b>
+        </button>
       </div>
-
-      <a
-        class="monthly-cta"
-        href="https://wa.me/5548996684751?text=Ol%C3%A1%2C%20Leandro!%20Tenho%20interesse%20em%20ser%20mensalista%20da%20barbearia."
-        target="_blank"
-        rel="noopener"
-      >
-        Falar com Leandro sobre mensalidade
-      </a>
+      <button id="btnEscolherPlano" class="monthly-cta" type="button">Escolher um plano e agendar</button>
     </section>
-
     <!-- HORÁRIOS -->
     <div class="hours-strip">
 
@@ -647,10 +622,10 @@
 
 
 <!-- SCRIPTS -->
-<script src="config.js?v=71"></script>
-<script src="firebase-config.js?v=71"></script>
+<script src="config.js?v=74"></script>
+<script src="firebase-config.js?v=74"></script>
 <script src="icons.js?v=69"></script>
-<script src="firebase-app.js?v=73"></script>
+<script src="firebase-app.js?v=74"></script>
 <script>
 (() => {
   const APP_URL='https://projetosetags.github.io/barbearia/';
@@ -734,7 +709,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
-    .register('sw.js?v=73')
+    .register('sw.js?v=74')
     .catch(() => {});
 }
 </script>
