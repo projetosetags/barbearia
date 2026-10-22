@@ -593,6 +593,22 @@
 </main>
 
 
+<div id="modalAgendamentoConfirmado" class="qr-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="tituloAgendamentoConfirmado">
+  <div class="qr-modal">
+    <div class="qr-modal-head">
+      <div><span class="tag">RESERVA REGISTRADA</span><h3 id="tituloAgendamentoConfirmado">Agendamento confirmado</h3></div>
+      <button id="btnFecharConfirmacao" class="qr-close" type="button" aria-label="Fechar">✕</button>
+    </div>
+    <div class="qr-preview">
+      <p id="resumoAgendamentoConfirmado"></p>
+      <p>Seu horário já está reservado na agenda da barbearia. Você pode enviar os detalhes pelo WhatsApp se desejar.</p>
+    </div>
+    <div class="qr-modal-actions">
+      <a id="btnEnviarWhatsAppConfirmacao" class="share-link" href="#" target="_blank" rel="noopener">Enviar confirmação pelo WhatsApp</a>
+      <button id="btnConcluirConfirmacao" class="share-link secondary-share" type="button">Concluir</button>
+    </div>
+  </div>
+</div>
 <div id="modalQrCliente" class="qr-overlay hidden">
   <div class="qr-modal">
     <div class="qr-modal-head">
@@ -634,7 +650,7 @@
 <script src="config.js?v=71"></script>
 <script src="firebase-config.js?v=71"></script>
 <script src="icons.js?v=69"></script>
-<script src="firebase-app.js?v=72"></script>
+<script src="firebase-app.js?v=73"></script>
 <script>
 (() => {
   const APP_URL='https://projetosetags.github.io/barbearia/';
@@ -718,7 +734,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
-    .register('sw.js?v=72')
+    .register('sw.js?v=73')
     .catch(() => {});
 }
 </script>
