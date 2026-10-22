@@ -156,7 +156,6 @@ async function garantirUsuario(){
   function fecharConfirmacaoAgendamento(){
     $('modalAgendamentoConfirmado')?.classList.add('hidden');
   }
-  function abrirWhatsApp(texto){const numero=String(cfg.whatsapp||'').replace(/\D/g,'');if(numero)window.open(`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`,'_blank','noopener')}
 
 async function buscarAgendamentoDoCliente(data, telefone){
   await garantirUsuario();
