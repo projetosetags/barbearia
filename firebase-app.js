@@ -125,6 +125,25 @@ async function garantirUsuario(){
     return [`Olá! Meu agendamento na ${cfg.nome} foi registrado.`,``,`Cliente: ${d.nome}`,`WhatsApp: ${d.telefone}`,`Serviço: ${s?.nome||d.servico}`,`Barbeiro: ${b?.nome||d.barbeiro}`,`Data: ${d.data.split('-').reverse().join('/')}`,`Horário: ${d.hora}`,d.obs?`Observação: ${d.obs}`:'',``,`Horário reservado automaticamente pelo sistema.`].filter(Boolean).join('\n');
   }
 
+  function mostrarConfirmacaoAgendamento(d){
+    const modal=$('modalAgendamentoConfirmado');
+    const resumo=$('resumoAgendamentoConfirmado');
+    const link=$('btnEnviarWhatsAppConfirmacao');
+    const servico=servicos.find(x=>String(x.id)===String(d.servico));
+    const barbeiro=barbeiros.find(x=>String(x.id)===String(d.barbeiro));
+    const dataFormatada=d.data.split('-').reverse().join('/');
+    if(resumo)resumo.textContent=dataFormatada+' às '+d.hora+' • '+(servico?.nome||d.servico)+' • '+(barbeiro?.nome||'Leandro');
+    if(link){
+      const numero=String(cfg.whatsapp||'').replace(/\\D/g,'');
+      link.href=numero?'https://wa.me/'+numero+'?text='+encodeURIComponent(mensagemWhatsApp(d)):'#';
+      link.hidden=!numero;
+    }
+    modal?.classList.remove('hidden');
+  }
+
+  function fecharConfirmacaoAgendamento(){
+    $('modalAgendamentoConfirmado')?.classList.add('hidden');
+  }
   function abrirWhatsApp(texto){const numero=String(cfg.whatsapp||'').replace(/\D/g,'');if(numero)window.open(`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`,'_blank','noopener')}
 
 async function buscarAgendamentoDoCliente(data, telefone){
@@ -613,9 +632,7 @@ async function alterarAgendamento(antigo,d){
         'ok'
       );
 
-      abrirWhatsApp(
-        mensagemWhatsApp(d)
-      );
+      mostrarConfirmacaoAgendamento(d);
 
       await gerarHorarios();
 
@@ -656,9 +673,7 @@ async function alterarAgendamento(antigo,d){
       'ok'
     );
 
-    abrirWhatsApp(
-      mensagemWhatsApp(d)
-    );
+    mostrarConfirmacaoAgendamento(d);
 
     await gerarHorarios();
 
@@ -698,6 +713,9 @@ async function alterarAgendamento(antigo,d){
     if($('textoEndereco'))$('textoEndereco').textContent=cfg.endereco||'';if($('footerEndereco'))$('footerEndereco').textContent=cfg.endereco||'';
     if($('linkWhatsappTopo'))$('linkWhatsappTopo').href=`https://wa.me/${String(cfg.whatsapp||'').replace(/\D/g,'')}`;
     if($('linkRota'))$('linkRota').href=`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cfg.endereco||cfg.nome||'')}`;
+    $('btnFecharConfirmacao')?.addEventListener('click',fecharConfirmacaoAgendamento);
+    $('btnConcluirConfirmacao')?.addEventListener('click',fecharConfirmacaoAgendamento);
+    $('modalAgendamentoConfirmado')?.addEventListener('click',e=>{if(e.target.id==='modalAgendamentoConfirmado')fecharConfirmacaoAgendamento()});
     $('clienteTelefone')?.addEventListener('input',e=>e.target.value=formatarTelefone(e.target.value));$('dataAgendamento')?.addEventListener('change',gerarHorarios);$('barbeiroSelect')?.addEventListener('change',gerarHorarios);$('formAgendamento')?.addEventListener('submit',enviarAgendamento);
     if($('statusSistema'))$('statusSistema').textContent='Agendamento automático';if($('statusDetalhe'))$('statusDetalhe').textContent='Escolha um serviço e finalize seu horário.';
   }
