@@ -43,11 +43,5 @@ window.BARBEARIA_CONFIG={
   ]
 };
 
-// A correção precisa iniciar DEPOIS do aplicativo principal para que
-// a lista correta de horários não seja sobrescrita durante a abertura.
-window.addEventListener('load',()=>{
-  const s=document.createElement('script');
-  s.src='booking-fix.js?v=75';
-  s.async=false;
-  document.body.appendChild(s);
-});
+// O firebase-app.js é o único responsável por disponibilidade,
+// gravação transacional, remarcação e confirmação ao cliente.
