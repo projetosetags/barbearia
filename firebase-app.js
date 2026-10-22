@@ -26,6 +26,8 @@ async function garantirUsuario(){
 }
   let servicos = [];
   let barbeiros = [];
+  let planoSelecionado = null;
+  let pararDeOuvirOcupacoes = null;
 
   const hoje = () => new Intl.DateTimeFormat('en-CA', {timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const moeda = v => Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -78,7 +80,25 @@ async function garantirUsuario(){
   }
 
   function ativarCards(){
-    document.querySelectorAll('.service-card[data-service]').forEach(card=>card.addEventListener('click',()=>selecionarServico(card.dataset.service,true)));
+    document.querySelectorAll('.service-card[data-service]').forEach(card=>card.addEventListener('click',()=>{
+      const esperado=planoSelecionado?(planoSelecionado.id==='mensal-cabelo'?'corte':'cabelo-barba'):null;
+      if(planoSelecionado && card.dataset.service!==esperado) planoSelecionado=null;
+      selecionarServico(card.dataset.service,true).then(()=>{
+        if(planoSelecionado){const el=$('servicoEscolhido');if(el)el.textContent=servicoAtual().nome+' • Plano mensal '+planoSelecionado.nome+' • '+moeda(planoSelecionado.valor)+'/mês';}
+      });
+    }));
+    document.querySelectorAll('[data-plano-mensal]').forEach(button=>button.addEventListener('click',()=>{
+      const plano=(cfg.planosMensais||[]).find(p=>p.id===button.dataset.planoMensal);if(!plano)return;
+      planoSelecionado=plano;
+      const id=plano.id==='mensal-cabelo'?'corte':'cabelo-barba';
+      const card=document.querySelector('.service-card[data-service="'+id+'"]');if(card)card.click();
+      setTimeout(()=>{
+        const el=$('servicoEscolhido');if(el)el.textContent=servicoAtual().nome+' • Plano mensal '+plano.nome+' • '+moeda(plano.valor)+'/mês';
+        mostrarMensagem('Plano escolhido. Preencha seus dados e selecione data e horário para agendar pelo sistema.','ok');
+        $('agendar')?.scrollIntoView({behavior:'smooth',block:'start'});
+      },180);
+    }));
+    $('btnEscolherPlano')?.addEventListener('click',()=>document.getElementById('planosMensais')?.scrollIntoView({behavior:'smooth',block:'center'}));
   }
 
   async function carregarCatalogo(){try{carregarServicos();await carregarBarbeiros();ativarCards()}catch(e){console.error(e);mostrarMensagem('Não foi possível carregar os dados da barbearia agora.','erro')}}
@@ -100,7 +120,7 @@ async function garantirUsuario(){
     const select=$('horaSolicitada');if(!select)return;
     const data=$('dataAgendamento')?.value;if(!data){select.innerHTML='<option value="">Escolha uma data</option>';return}
     let agendaDia=cfg.horariosSemana?.[diaSemana(data)];
-    try{const esp=await db.collection('horarios_especiais').doc(data).get();if(esp.exists){const x=esp.data();agendaDia={inicio:x.inicio,fim:x.fim}}}catch(e){console.warn('Horário especial indisponível',e)}
+    try{const esp=await db.collection('horarios_especiais').doc(data).get();if(esp.exists){const x=esp.data()||{};if(x.ativo===true&&x.fechado===true)agendaDia=null;else if(x.ativo===true&&/^\\d{2}:\\d{2}$/.test(x.inicio||'')&&/^\\d{2}:\\d{2}$/.test(x.fim||'')&&minutos(x.fim)>minutos(x.inicio))agendaDia={inicio:x.inicio,fim:x.fim}}}catch(e){console.warn('Horário especial indisponível',e)}
     if(!agendaDia){select.innerHTML='<option value="">Fechado neste dia</option>';return}
     const ocupados=await agendamentosOcupados();
     let bloqueios=[...(cfg.bloqueiosPadrao?.[diaSemana(data)]||[])];try{const bs=await db.collection('bloqueios').where('data','==',data).get();bloqueios.push(...bs.docs.map(d=>d.data()).filter(x=>!x.barbeiro_id||x.barbeiro_id===$('barbeiroSelect')?.value))}catch(e){console.warn('Bloqueios indisponíveis',e)}
@@ -122,25 +142,17 @@ async function garantirUsuario(){
 
   function mensagemWhatsApp(d){
     const s=servicos.find(x=>String(x.id)===String(d.servico));const b=barbeiros.find(x=>String(x.id)===String(d.barbeiro));
-    return [`Olá! Meu agendamento na ${cfg.nome} foi registrado.`,``,`Cliente: ${d.nome}`,`WhatsApp: ${d.telefone}`,`Serviço: ${s?.nome||d.servico}`,`Barbeiro: ${b?.nome||d.barbeiro}`,`Data: ${d.data.split('-').reverse().join('/')}`,`Horário: ${d.hora}`,d.obs?`Observação: ${d.obs}`:'',``,`Horário reservado automaticamente pelo sistema.`].filter(Boolean).join('\n');
+    return [`Olá! Meu agendamento na ${cfg.nome} foi registrado.`,``,`Cliente: ${d.nome}`,`WhatsApp: ${d.telefone}`,`Serviço: ${s?.nome||d.servico}`,d.plano?`Plano mensal: ${d.plano.nome} (${moeda(d.plano.valor)}/mês)`:'',`Barbeiro: ${b?.nome||d.barbeiro}`,`Data: ${d.data.split('-').reverse().join('/')}`,`Horário: ${d.hora}`,d.obs?`Observação: ${d.obs}`:'',``,`Horário reservado automaticamente pelo sistema.`].filter(Boolean).join('\\n');
   }
-
   function mostrarConfirmacaoAgendamento(d){
-    const modal=$('modalAgendamentoConfirmado');
-    const resumo=$('resumoAgendamentoConfirmado');
-    const link=$('btnEnviarWhatsAppConfirmacao');
-    const servico=servicos.find(x=>String(x.id)===String(d.servico));
-    const barbeiro=barbeiros.find(x=>String(x.id)===String(d.barbeiro));
+    const modal=$('modalAgendamentoConfirmado'),resumo=$('resumoAgendamentoConfirmado'),link=$('btnEnviarWhatsAppConfirmacao');
+    const s=servicos.find(x=>String(x.id)===String(d.servico)),b=barbeiros.find(x=>String(x.id)===String(d.barbeiro));
     const dataFormatada=d.data.split('-').reverse().join('/');
-    if(resumo)resumo.textContent=dataFormatada+' às '+d.hora+' • '+(servico?.nome||d.servico)+' • '+(barbeiro?.nome||'Leandro');
-    if(link){
-      const numero=String(cfg.whatsapp||'').replace(/\\D/g,'');
-      link.href=numero?'https://wa.me/'+numero+'?text='+encodeURIComponent(mensagemWhatsApp(d)):'#';
-      link.hidden=!numero;
-    }
+    const detalhes=dataFormatada+' às '+d.hora+' • '+(s?.nome||d.servico)+' • '+(b?.nome||'Leandro');
+    if(resumo)resumo.textContent=d.plano?detalhes+' • '+d.plano.nome+' ('+moeda(d.plano.valor)+'/mês)':detalhes;
+    if(link){const numero=String(cfg.whatsapp||'').replace(/\\D/g,'');link.href=numero?'https://wa.me/'+numero+'?text='+encodeURIComponent(mensagemWhatsApp(d)):'#';link.hidden=!numero;}
     modal?.classList.remove('hidden');
   }
-
   function fecharConfirmacaoAgendamento(){
     $('modalAgendamentoConfirmado')?.classList.add('hidden');
   }
@@ -321,13 +333,13 @@ async function salvarNovoAgendamento(d){
       nome:d.nome,
       telefone:telefoneLimpo(d.telefone),
       servico_id:d.servico,
-      servico_nome:s?.nome || d.servico,
+      servico_nome:d.plano?`${s?.nome||d.servico} — ${d.plano.nome} (${moeda(d.plano.valor)}/mês)`:s?.nome || d.servico,
       duracao_minutos:duracao,
       barbeiro_id:d.barbeiro,
       data:d.data,
       hora:d.hora,
       hora_solicitada:d.hora,
-      observacao:d.obs || '',
+      observacao:[d.obs,d.plano?`Plano mensal selecionado: ${d.plano.nome} (${moeda(d.plano.valor)}/mês)`:'' ].filter(Boolean).join(' | '),
       status:'pendente',
       criado_em:criadoEm,
       atualizado_em:criadoEm,
@@ -348,156 +360,28 @@ async function salvarNovoAgendamento(d){
 }
 async function alterarAgendamento(antigo,d){
   await garantirUsuario();
-
-  const s = servicos.find(
-    x => String(x.id) === String(d.servico)
-  );
-
-  const ocupado = await horarioOcupadoPorOutro(
-    d.data,
-    d.barbeiro,
-    d.hora,
-    antigo.id
-  );
-
-  if(ocupado){
-    throw new Error('HORARIO_OCUPADO');
-  }
-
-  const novoId = idReserva(
-    d.data,
-    d.barbeiro,
-    d.hora
-  );
-
-  const refAgendamentoAntigo = db
-    .collection('agendamentos')
-    .doc(antigo.id);
-
-  const refOcupacaoAntiga = db
-    .collection('ocupacoes')
-    .doc(antigo.id);
-
-  const refAgendamentoNovo = db
-    .collection('agendamentos')
-    .doc(novoId);
-
-  const refOcupacaoNova = db
-    .collection('ocupacoes')
-    .doc(novoId);
-
-  const dadosAgendamento = {
-    nome:d.nome,
-    telefone:telefoneLimpo(d.telefone),
-
-    servico_id:d.servico,
-    servico_nome:s?.nome || d.servico,
-    duracao_minutos:Number(s?.duracao_minutos || 30),
-
-    barbeiro_id:d.barbeiro,
-
-    data:d.data,
-    hora:d.hora,
-    hora_solicitada:d.hora,
-
-    observacao:d.obs || '',
-
-    status:'pendente',
-
-    atualizado_em:
-      firebase.firestore.FieldValue.serverTimestamp(),
-
-    valor:Number(s?.valor || 0),
-
-    owner_uid:usuarioAtual.uid
-  };
-
-  const dadosOcupacao = {
-    agendamento_id:novoId,
-
-    data:d.data,
-    hora:d.hora,
-
-    barbeiro_id:d.barbeiro,
-
-    duracao_minutos:
-      Number(s?.duracao_minutos || 30),
-
-    owner_uid:usuarioAtual.uid,
-
-    atualizado_em:
-      firebase.firestore.FieldValue.serverTimestamp()
-  };
-
-  /*
-    Mesmo horário/documento.
-    Apenas atualiza os dados.
-  */
-  if(novoId === antigo.id){
-
-    const batch = db.batch();
-
-    batch.update(
-      refAgendamentoAntigo,
-      dadosAgendamento
-    );
-
-    batch.set(
-      refOcupacaoAntiga,
-      {
-        ...dadosOcupacao,
-        criado_em:
-          firebase.firestore.FieldValue.serverTimestamp()
-      },
-      {merge:true}
-    );
-
-    await batch.commit();
-
-    return;
-  }
-
-  /*
-    Mudança para outro horário.
-    Primeiro verifica se a nova ocupação existe.
-  */
-  const existeNovaOcupacao =
-    await refOcupacaoNova.get();
-
-  if(existeNovaOcupacao.exists){
-    throw new Error('HORARIO_OCUPADO');
-  }
-
-  const batch = db.batch();
-
-  batch.set(
-    refAgendamentoNovo,
-    {
-      ...dadosAgendamento,
-
-      criado_em:
-        antigo.criado_em ||
-        firebase.firestore.FieldValue.serverTimestamp()
-    }
-  );
-
-  batch.set(
-    refOcupacaoNova,
-    {
-      ...dadosOcupacao,
-
-      criado_em:
-        firebase.firestore.FieldValue.serverTimestamp()
-    }
-  );
-
-  batch.delete(refAgendamentoAntigo);
-  batch.delete(refOcupacaoAntiga);
-
-  await batch.commit();
+  const s=servicos.find(x=>String(x.id)===String(d.servico));
+  const novoId=idReserva(d.data,d.barbeiro,d.hora);
+  const refAntigo=db.collection('agendamentos').doc(antigo.id),refOcupacaoAntiga=db.collection('ocupacoes').doc(antigo.id);
+  const refNovo=db.collection('agendamentos').doc(novoId),refOcupacaoNova=db.collection('ocupacoes').doc(novoId);
+  const consulta=db.collection('ocupacoes').where('data','==',d.data).where('barbeiro_id','==',d.barbeiro);
+  const duracao=Number(s?.duracao_minutos||30),inicio=minutos(d.hora);
+  const nomeServico=d.plano?`${s?.nome||d.servico} — ${d.plano.nome} (${moeda(d.plano.valor)}/mês)`:s?.nome||d.servico;
+  const observacao=[d.obs,d.plano?`Plano mensal selecionado: ${d.plano.nome} (${moeda(d.plano.valor)}/mês)`:'' ].filter(Boolean).join(' | ');
+  await db.runTransaction(async transaction=>{
+    const [ocupacaoNova,ocupacoesDia,agendamentoAntigo]=await Promise.all([transaction.get(refOcupacaoNova),transaction.get(consulta),transaction.get(refAntigo)]);
+    if(!agendamentoAntigo.exists)throw new Error('AGENDAMENTO_NAO_ENCONTRADO');
+    if(novoId!==antigo.id&&ocupacaoNova.exists)throw new Error('HORARIO_OCUPADO');
+    const conflito=ocupacoesDia.docs.some(doc=>{if(doc.id===antigo.id)return false;const o=doc.data();return inicio<minutos(o.hora)+Number(o.duracao_minutos||30)&&inicio+duracao>minutos(o.hora)});
+    if(conflito)throw new Error('HORARIO_OCUPADO');
+    const timestamp=firebase.firestore.FieldValue.serverTimestamp();
+    const dados={nome:d.nome,telefone:telefoneLimpo(d.telefone),servico_id:d.servico,servico_nome:nomeServico,duracao_minutos:duracao,barbeiro_id:d.barbeiro,data:d.data,hora:d.hora,hora_solicitada:d.hora,observacao,status:'pendente',atualizado_em:timestamp,valor:Number(s?.valor||0),owner_uid:usuarioAtual.uid};
+    const ocupacao={agendamento_id:novoId,data:d.data,hora:d.hora,barbeiro_id:d.barbeiro,duracao_minutos:duracao,owner_uid:usuarioAtual.uid,atualizado_em:timestamp};
+    if(novoId===antigo.id){transaction.update(refAntigo,dados);transaction.set(refOcupacaoAntiga,{...ocupacao,criado_em:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});return;}
+    transaction.set(refNovo,{...dados,criado_em:antigo.criado_em||timestamp});transaction.set(refOcupacaoNova,{...ocupacao,criado_em:timestamp});transaction.delete(refAntigo);transaction.delete(refOcupacaoAntiga);
+  });
 }
-
- async function enviarAgendamento(e){
+async function enviarAgendamento(e){
   e.preventDefault();
 
   const btn = $('btnAgendar');
@@ -509,7 +393,8 @@ async function alterarAgendamento(antigo,d){
     barbeiro:$('barbeiroSelect').value,
     data:$('dataAgendamento').value,
     hora:$('horaSolicitada').value,
-    obs:$('observacao').value.trim()
+    obs:$('observacao').value.trim(),
+    plano:planoSelecionado
   };
 
   if(!d.servico){
@@ -633,6 +518,7 @@ async function alterarAgendamento(antigo,d){
       );
 
       mostrarConfirmacaoAgendamento(d);
+      planoSelecionado=null;
 
       await gerarHorarios();
 
@@ -708,6 +594,11 @@ async function alterarAgendamento(antigo,d){
   }
 }
 
+  function ouvirOcupacoes(){
+    if(pararDeOuvirOcupacoes){pararDeOuvirOcupacoes();pararDeOuvirOcupacoes=null;}
+    const data=$('dataAgendamento')?.value,barbeiro=$('barbeiroSelect')?.value;if(!data||!barbeiro)return;
+    pararDeOuvirOcupacoes=db.collection('ocupacoes').where('data','==',data).where('barbeiro_id','==',barbeiro).onSnapshot(()=>gerarHorarios(),e=>console.warn('Atualização de horários indisponível:',e));
+  }
   function prepararTela(){
     const data=$('dataAgendamento');if(data){data.min=hoje();data.value=hoje()}
     if($('textoEndereco'))$('textoEndereco').textContent=cfg.endereco||'';if($('footerEndereco'))$('footerEndereco').textContent=cfg.endereco||'';
@@ -716,7 +607,7 @@ async function alterarAgendamento(antigo,d){
     $('btnFecharConfirmacao')?.addEventListener('click',fecharConfirmacaoAgendamento);
     $('btnConcluirConfirmacao')?.addEventListener('click',fecharConfirmacaoAgendamento);
     $('modalAgendamentoConfirmado')?.addEventListener('click',e=>{if(e.target.id==='modalAgendamentoConfirmado')fecharConfirmacaoAgendamento()});
-    $('clienteTelefone')?.addEventListener('input',e=>e.target.value=formatarTelefone(e.target.value));$('dataAgendamento')?.addEventListener('change',gerarHorarios);$('barbeiroSelect')?.addEventListener('change',gerarHorarios);$('formAgendamento')?.addEventListener('submit',enviarAgendamento);
+    $('clienteTelefone')?.addEventListener('input',e=>e.target.value=formatarTelefone(e.target.value));$('dataAgendamento')?.addEventListener('change',()=>{gerarHorarios();ouvirOcupacoes()});$('barbeiroSelect')?.addEventListener('change',()=>{gerarHorarios();ouvirOcupacoes()});$('formAgendamento')?.addEventListener('submit',enviarAgendamento);
     if($('statusSistema'))$('statusSistema').textContent='Agendamento automático';if($('statusDetalhe'))$('statusDetalhe').textContent='Escolha um serviço e finalize seu horário.';
   }
 
