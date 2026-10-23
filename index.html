@@ -16,24 +16,24 @@
   <title>Barbearia Leandro David</title>
 
   <!-- APP / PWA -->
-  <link rel="manifest" href="manifest.json?v=69">
+  <link rel="manifest" href="manifest.json?v=77">
 
   <!-- ÍCONE IPHONE / TELA DE INÍCIO -->
   <link
     rel="apple-touch-icon"
-    href="assets/leandro-david.jpg?v=69"
+    href="assets/leandro-david.jpg?v=77"
   >
 
   <!-- ÍCONE NAVEGADOR -->
   <link
     rel="icon"
-    href="assets/leandro-david.jpg?v=69"
+    href="assets/leandro-david.jpg?v=77"
     type="image/jpeg"
   >
 
   <link
     rel="shortcut icon"
-    href="assets/leandro-david.jpg?v=69"
+    href="assets/leandro-david.jpg?v=77"
     type="image/jpeg"
   >
 
@@ -45,13 +45,13 @@
   >
   <meta
     property="og:image"
-    content="https://projetosetags.github.io/barbearia/assets/leandro-david.jpg?v=69"
+    content="https://projetosetags.github.io/barbearia/assets/leandro-david.jpg?v=77"
   >
 
   <!-- ESTILOS -->
-  <link rel="stylesheet" href="novo-style.css?v=69">
-  <link rel="stylesheet" href="services.css?v=69">
-  <link rel="stylesheet" href="client-brand.css?v=69">
+  <link rel="stylesheet" href="novo-style.css?v=77">
+  <link rel="stylesheet" href="services.css?v=77">
+  <link rel="stylesheet" href="client-brand.css?v=77">
 
   <link
     rel="stylesheet"
@@ -70,7 +70,7 @@
 
   <a class="brand" href="./">
     <img
-      src="assets/leandro-david.jpg?v=69"
+      src="assets/leandro-david.jpg?v=77"
       alt="Barbearia Leandro David"
     >
 
@@ -116,7 +116,7 @@
 
     <img
       class="hero-logo barber-photo"
-      src="assets/leandro-david.jpg?v=69"
+      src="assets/leandro-david.jpg?v=77"
       alt="Leandro David"
     >
 
@@ -129,7 +129,7 @@
     <div class="showcase-head">
 
       <img
-        src="assets/leandro-david.jpg?v=69"
+        src="assets/leandro-david.jpg?v=77"
         alt="Leandro David Barbearia"
         class="showcase-logo"
       >
@@ -271,6 +271,9 @@
         </button>
         <button class="monthly-card monthly-card-link featured" type="button" data-plano-mensal="mensal-cabelo-barba">
           <span class="monthly-icon">✦</span><div><strong>CABELO E BARBA</strong><small>Toque para escolher o horário</small></div><b>R$ 130,00/mês</b>
+        </button>
+        <button class="monthly-card monthly-card-link" type="button" data-plano-mensal="mensal-cabelo-barba-sobrancelha">
+          <span class="monthly-icon">✂</span><div><strong>CABELO, BARBA E SOBRANCELHA</strong><small>Toque para escolher o horário</small></div><b>R$ 150,00/mês</b>
         </button>
       </div>
       <button id="btnEscolherPlano" class="monthly-cta" type="button">Escolher um plano e agendar</button>
@@ -438,7 +441,7 @@
 
       <img
         class="quick-photo"
-        src="assets/leandro-david.jpg?v=69"
+        src="assets/leandro-david.jpg?v=77"
         alt="Leandro David"
       >
 
@@ -492,7 +495,7 @@
       </div>
     </div>
     <div class="client-qr">
-      <img src="qr-cliente.svg?v=69" alt="QR Code do app da Barbearia Leandro David">
+      <img src="qr-cliente.svg?v=77" alt="QR Code do app da Barbearia Leandro David">
       <small>Escaneie para agendar</small>
     </div>
   </section>
@@ -594,7 +597,7 @@
       <button id="btnFecharQrCliente" class="qr-close" type="button">✕</button>
     </div>
     <div class="qr-preview">
-      <img id="qrImagemCliente" src="qr-cliente.svg?v=69" alt="QR Code para acessar o app da Barbearia Leandro David">
+      <img id="qrImagemCliente" src="qr-cliente.svg?v=77" alt="QR Code para acessar o app da Barbearia Leandro David">
       <p>O cliente pode escanear este código para abrir o app de agendamento.</p>
       <small>https://projetosetags.github.io/barbearia/</small>
     </div>
@@ -622,14 +625,14 @@
 
 
 <!-- SCRIPTS -->
-<script src="config.js?v=75"></script>
-<script src="firebase-config.js?v=75"></script>
-<script src="icons.js?v=69"></script>
-<script src="firebase-app.js?v=76"></script>
+<script src="config.js?v=77"></script>
+<script src="firebase-config.js?v=77"></script>
+<script src="icons.js?v=77"></script>
+<script src="firebase-app.js?v=77"></script>
 <script>
 (() => {
   const APP_URL='https://projetosetags.github.io/barbearia/';
-  const QR_URL='qr-cliente.svg?v=69';
+  const QR_URL='qr-cliente.svg?v=77';
   const $=id=>document.getElementById(id);
 
   function abrirQr(){$('modalQrCliente')?.classList.remove('hidden')}
@@ -709,7 +712,7 @@
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
-    .register('sw.js?v=76')
+    .register('sw.js?v=77')
     .catch(() => {});
 }
 </script>
