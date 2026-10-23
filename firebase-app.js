@@ -79,9 +79,13 @@ async function garantirUsuario(){
     if(rolar){setTimeout(()=>$('agendar')?.scrollIntoView({behavior:'smooth',block:'start'}),120)}
   }
 
+  function servicoDoPlano(planoId){
+    return ({'mensal-cabelo':'corte','mensal-cabelo-barba':'cabelo-barba','mensal-cabelo-barba-sobrancelha':'combo'})[planoId]||null;
+  }
+
   function ativarCards(){
     document.querySelectorAll('.service-card[data-service]').forEach(card=>card.addEventListener('click',()=>{
-      const esperado=planoSelecionado?(planoSelecionado.id==='mensal-cabelo'?'corte':'cabelo-barba'):null;
+      const esperado=planoSelecionado?servicoDoPlano(planoSelecionado.id):null;
       if(planoSelecionado && card.dataset.service!==esperado) planoSelecionado=null;
       selecionarServico(card.dataset.service,true).then(()=>{
         if(planoSelecionado){const el=$('servicoEscolhido');if(el)el.textContent=servicoAtual().nome+' • Plano mensal '+planoSelecionado.nome+' • '+moeda(planoSelecionado.valor)+'/mês';}
@@ -90,7 +94,7 @@ async function garantirUsuario(){
     document.querySelectorAll('[data-plano-mensal]').forEach(button=>button.addEventListener('click',()=>{
       const plano=(cfg.planosMensais||[]).find(p=>p.id===button.dataset.planoMensal);if(!plano)return;
       planoSelecionado=plano;
-      const id=plano.id==='mensal-cabelo'?'corte':'cabelo-barba';
+      const id=servicoDoPlano(plano.id);if(!id)return;
       const card=document.querySelector('.service-card[data-service="'+id+'"]');if(card)card.click();
       setTimeout(()=>{
         const el=$('servicoEscolhido');if(el)el.textContent=servicoAtual().nome+' • Plano mensal '+plano.nome+' • '+moeda(plano.valor)+'/mês';
