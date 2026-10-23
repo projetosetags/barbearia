@@ -67,6 +67,24 @@ async function garantirUsuario(){
 
   function servicoAtual(){return servicos.find(x=>String(x.id)===String($('servicoSelect')?.value))}
 
+  function referenciasOcupacoesPossivelmenteConflitantes(data,barbeiro,inicio,duracao){
+    const maiorDuracao=Math.max(30,...servicos.map(s=>Number(s.duracao_minutos||30)));
+    const primeiro=Math.max(0,Math.floor((inicio-maiorDuracao)/30)*30);
+    const limite=inicio+duracao;
+    const refs=[];
+    for(let m=primeiro;m<limite;m+=30){
+      refs.push(db.collection('ocupacoes').doc(idReserva(data,barbeiro,horaTexto(m))));
+    }
+    return refs;
+  }
+  function ocupacaoConflita(snapshot,inicio,duracao,ignorarId=null){
+    if(!snapshot?.exists||snapshot.id===ignorarId)return false;
+    const ocupacao=snapshot.data()||{};
+    const inicioOcupado=minutos(String(ocupacao.hora||'').slice(0,5));
+    const duracaoOcupada=Number(ocupacao.duracao_minutos||30);
+    return inicio<inicioOcupado+duracaoOcupada&&inicio+duracao>inicioOcupado;
+  }
+
   async function selecionarServico(id,rolar=true){
     const s=servicos.find(x=>String(x.id)===String(id));
     if(!s)return;
@@ -297,35 +315,24 @@ async function salvarNovoAgendamento(d){
     .collection('ocupacoes')
     .doc(agendamentoId);
 
-  const consultaOcupacoes = db
-    .collection('ocupacoes')
-    .where('data','==',d.data)
-    .where('barbeiro_id','==',d.barbeiro);
+  const refsConflito=referenciasOcupacoesPossivelmenteConflitantes(
+    d.data,d.barbeiro,inicio,duracao
+  );
 
   await db.runTransaction(async transaction => {
-    const [ocupacaoExata, ocupacoesDoDia] = await Promise.all([
+    const leituras=await Promise.all([
+      transaction.get(refAgendamento),
       transaction.get(refOcupacao),
-      transaction.get(consultaOcupacoes)
+      ...refsConflito.map(ref=>transaction.get(ref))
     ]);
+    const [agendamentoExato,ocupacaoExata]=leituras;
+    const ocupacoesPossiveis=leituras.slice(2);
 
-    if(ocupacaoExata.exists){
+    if(agendamentoExato.exists||ocupacaoExata.exists){
       throw new Error('HORARIO_OCUPADO');
     }
 
-    const conflito = ocupacoesDoDia.docs.some(doc => {
-      const ocupacao = doc.data();
-      const inicioOcupado = minutos(
-        String(ocupacao.hora || '').slice(0,5)
-      );
-      const duracaoOcupada = Number(
-        ocupacao.duracao_minutos || 30
-      );
-
-      return inicio < inicioOcupado + duracaoOcupada &&
-        inicio + duracao > inicioOcupado;
-    });
-
-    if(conflito){
+    if(ocupacoesPossiveis.some(snapshot=>ocupacaoConflita(snapshot,inicio,duracao))){
       throw new Error('HORARIO_OCUPADO');
     }
 
@@ -367,15 +374,21 @@ async function alterarAgendamento(antigo,d){
   const novoId=idReserva(d.data,d.barbeiro,d.hora);
   const refAntigo=db.collection('agendamentos').doc(antigo.id),refOcupacaoAntiga=db.collection('ocupacoes').doc(antigo.id);
   const refNovo=db.collection('agendamentos').doc(novoId),refOcupacaoNova=db.collection('ocupacoes').doc(novoId);
-  const consulta=db.collection('ocupacoes').where('data','==',d.data).where('barbeiro_id','==',d.barbeiro);
   const duracao=Number(s?.duracao_minutos||30),inicio=minutos(d.hora);
+  const refsConflito=referenciasOcupacoesPossivelmenteConflitantes(d.data,d.barbeiro,inicio,duracao);
   const nomeServico=d.plano?`${s?.nome||d.servico} — ${d.plano.nome} (${moeda(d.plano.valor)}/mês)`:s?.nome||d.servico;
   const observacao=[d.obs,d.plano?`Plano mensal selecionado: ${d.plano.nome} (${moeda(d.plano.valor)}/mês)`:'' ].filter(Boolean).join(' | ');
   await db.runTransaction(async transaction=>{
-    const [ocupacaoNova,ocupacoesDia,agendamentoAntigo]=await Promise.all([transaction.get(refOcupacaoNova),transaction.get(consulta),transaction.get(refAntigo)]);
+    const leituras=await Promise.all([
+      transaction.get(refAntigo),
+      transaction.get(refOcupacaoNova),
+      ...refsConflito.map(ref=>transaction.get(ref))
+    ]);
+    const [agendamentoAntigo,ocupacaoNova]=leituras;
+    const ocupacoesPossiveis=leituras.slice(2);
     if(!agendamentoAntigo.exists)throw new Error('AGENDAMENTO_NAO_ENCONTRADO');
     if(novoId!==antigo.id&&ocupacaoNova.exists)throw new Error('HORARIO_OCUPADO');
-    const conflito=ocupacoesDia.docs.some(doc=>{if(doc.id===antigo.id)return false;const o=doc.data();return inicio<minutos(o.hora)+Number(o.duracao_minutos||30)&&inicio+duracao>minutos(o.hora)});
+    const conflito=ocupacoesPossiveis.some(snapshot=>ocupacaoConflita(snapshot,inicio,duracao,antigo.id));
     if(conflito)throw new Error('HORARIO_OCUPADO');
     const timestamp=firebase.firestore.FieldValue.serverTimestamp();
     const dados={nome:d.nome,telefone:telefoneLimpo(d.telefone),servico_id:d.servico,servico_nome:nomeServico,duracao_minutos:duracao,barbeiro_id:d.barbeiro,data:d.data,hora:d.hora,hora_solicitada:d.hora,observacao,status:'pendente',atualizado_em:timestamp,valor:Number(s?.valor||0),owner_uid:usuarioAtual.uid};
@@ -582,10 +595,12 @@ async function enviarAgendamento(e){
 
     }else{
 
-      mostrarMensagem(
-        'Não foi possível concluir o agendamento agora.',
-        'erro'
-      );
+      const detalhe=err?.code==='permission-denied'
+        ?'O Firebase recusou a gravação. Avise a barbearia para revisar as permissões do sistema.'
+        :err?.code==='unavailable'
+          ?'Sem conexão com o sistema agora. Confira a internet e tente novamente.'
+          :'Não foi possível concluir o agendamento. Confira seus dados e tente novamente.';
+      mostrarMensagem(detalhe,'erro');
     }
 
     await gerarHorarios();
