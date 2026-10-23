@@ -36,7 +36,8 @@ window.BARBEARIA_CONFIG={
   ],
   planosMensais:[
     {id:'mensal-cabelo',nome:'Mensalista • Cabelo',valor:100},
-    {id:'mensal-cabelo-barba',nome:'Mensalista • Cabelo e barba',valor:130}
+    {id:'mensal-cabelo-barba',nome:'Mensalista • Cabelo e barba',valor:130},
+    {id:'mensal-cabelo-barba-sobrancelha',nome:'Mensalista • Cabelo, barba e sobrancelha',valor:150}
   ],
   barbeirosPadrao:[
     {id:'leandro-david',nome:'Leandro David'}
