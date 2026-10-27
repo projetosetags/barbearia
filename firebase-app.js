@@ -377,7 +377,7 @@ async function alterarAgendamento(antigo,d){
   const duracao=Number(s?.duracao_minutos||30),inicio=minutos(d.hora);
   const refsConflito=referenciasOcupacoesPossivelmenteConflitantes(d.data,d.barbeiro,inicio,duracao);
   const planoAtual=d.plano||(cfg.planosMensais||[]).find(p=>String(antigo.servico_nome||'').includes(p.nome))||null;
-  const visitaAtualTexto=(String(antigo.servico_nome||'').match(/visita\\s*0*(\\d+)/i)||[])[1]||'01';
+  const visitaAtualTexto=(String(antigo.servico_nome||'').match(/visita\s*0*(\d+)/i)||[])[1]||'01';
   const visitaAtual=Math.max(1,Number(visitaAtualTexto)||1),visitaTexto=String(visitaAtual).padStart(2,'0');
   const nomeServico=planoAtual?`${s?.nome||d.servico} — ${planoAtual.nome} (${moeda(planoAtual.valor)}/mês) • Visita ${visitaTexto}`:s?.nome||d.servico;
   const observacao=[d.obs,planoAtual?`Plano mensal selecionado: ${planoAtual.nome} (${moeda(planoAtual.valor)}/mês) • Visita ${visitaTexto}`:'' ].filter(Boolean).join(' | ');
