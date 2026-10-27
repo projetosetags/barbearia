@@ -376,8 +376,11 @@ async function alterarAgendamento(antigo,d){
   const refNovo=db.collection('agendamentos').doc(novoId),refOcupacaoNova=db.collection('ocupacoes').doc(novoId);
   const duracao=Number(s?.duracao_minutos||30),inicio=minutos(d.hora);
   const refsConflito=referenciasOcupacoesPossivelmenteConflitantes(d.data,d.barbeiro,inicio,duracao);
-  const nomeServico=d.plano?`${s?.nome||d.servico} — ${d.plano.nome} (${moeda(d.plano.valor)}/mês)`:s?.nome||d.servico;
-  const observacao=[d.obs,d.plano?`Plano mensal selecionado: ${d.plano.nome} (${moeda(d.plano.valor)}/mês)`:'' ].filter(Boolean).join(' | ');
+  const planoAtual=d.plano||(cfg.planosMensais||[]).find(p=>String(antigo.servico_nome||'').includes(p.nome))||null;
+  const visitaAtualTexto=(String(antigo.servico_nome||'').match(/visita\\s*0*(\\d+)/i)||[])[1]||'01';
+  const visitaAtual=Math.max(1,Number(visitaAtualTexto)||1),visitaTexto=String(visitaAtual).padStart(2,'0');
+  const nomeServico=planoAtual?`${s?.nome||d.servico} — ${planoAtual.nome} (${moeda(planoAtual.valor)}/mês) • Visita ${visitaTexto}`:s?.nome||d.servico;
+  const observacao=[d.obs,planoAtual?`Plano mensal selecionado: ${planoAtual.nome} (${moeda(planoAtual.valor)}/mês) • Visita ${visitaTexto}`:'' ].filter(Boolean).join(' | ');
   await db.runTransaction(async transaction=>{
     const leituras=await Promise.all([
       transaction.get(refAntigo),
@@ -391,7 +394,7 @@ async function alterarAgendamento(antigo,d){
     const conflito=ocupacoesPossiveis.some(snapshot=>ocupacaoConflita(snapshot,inicio,duracao,antigo.id));
     if(conflito)throw new Error('HORARIO_OCUPADO');
     const timestamp=firebase.firestore.FieldValue.serverTimestamp();
-    const dados={nome:d.nome,telefone:telefoneLimpo(d.telefone),servico_id:d.servico,servico_nome:nomeServico,duracao_minutos:duracao,barbeiro_id:d.barbeiro,data:d.data,hora:d.hora,hora_solicitada:d.hora,observacao,status:'pendente',atualizado_em:timestamp,valor:Number(s?.valor||0),owner_uid:usuarioAtual.uid};
+    const dados={nome:d.nome,telefone:telefoneLimpo(d.telefone),servico_id:d.servico,servico_nome:nomeServico,duracao_minutos:duracao,barbeiro_id:d.barbeiro,data:d.data,hora:d.hora,hora_solicitada:d.hora,observacao,status:'pendente',atualizado_em:timestamp,valor:planoAtual?(visitaAtual===1?Number(planoAtual.valor):0):Number(s?.valor||0),owner_uid:usuarioAtual.uid};
     const ocupacao={agendamento_id:novoId,data:d.data,hora:d.hora,barbeiro_id:d.barbeiro,duracao_minutos:duracao,owner_uid:usuarioAtual.uid,atualizado_em:timestamp};
     if(novoId===antigo.id){transaction.update(refAntigo,dados);transaction.set(refOcupacaoAntiga,{...ocupacao,criado_em:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});return;}
     transaction.set(refNovo,{...dados,criado_em:antigo.criado_em||timestamp});transaction.set(refOcupacaoNova,{...ocupacao,criado_em:timestamp});transaction.delete(refAntigo);transaction.delete(refOcupacaoAntiga);
@@ -522,6 +525,7 @@ async function enviarAgendamento(e){
 
       btn.textContent = 'Alterando...';
 
+      if(!d.plano){d.plano=(cfg.planosMensais||[]).find(p=>String(existente.servico_nome||'').includes(p.nome))||null;}
       await alterarAgendamento(
         existente,
         d
