@@ -343,17 +343,17 @@ async function salvarNovoAgendamento(d){
       nome:d.nome,
       telefone:telefoneLimpo(d.telefone),
       servico_id:d.servico,
-      servico_nome:d.plano?`${s?.nome||d.servico} — ${d.plano.nome} (${moeda(d.plano.valor)}/mês)`:s?.nome || d.servico,
+      servico_nome:d.plano?`${s?.nome||d.servico} — ${d.plano.nome} (${moeda(d.plano.valor)}/mês) • Visita 01`:s?.nome || d.servico,
       duracao_minutos:duracao,
       barbeiro_id:d.barbeiro,
       data:d.data,
       hora:d.hora,
       hora_solicitada:d.hora,
-      observacao:[d.obs,d.plano?`Plano mensal selecionado: ${d.plano.nome} (${moeda(d.plano.valor)}/mês)`:'' ].filter(Boolean).join(' | '),
+      observacao:[d.obs,d.plano?`Plano mensal selecionado: ${d.plano.nome} (${moeda(d.plano.valor)}/mês) • Visita 01`:'' ].filter(Boolean).join(' | '),
       status:'pendente',
       criado_em:criadoEm,
       atualizado_em:criadoEm,
-      valor:Number(s?.valor || 0),
+      valor:Number(d.plano?.valor ?? s?.valor ?? 0),
       owner_uid:usuarioAtual.uid
     });
 
