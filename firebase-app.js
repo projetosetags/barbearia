@@ -164,14 +164,14 @@ async function garantirUsuario(){
 
   function mensagemWhatsApp(d){
     const s=servicos.find(x=>String(x.id)===String(d.servico));const b=barbeiros.find(x=>String(x.id)===String(d.barbeiro));
-    return [`Olá! Meu agendamento na ${cfg.nome} foi registrado.`,``,`Cliente: ${d.nome}`,`WhatsApp: ${d.telefone}`,`Serviço: ${s?.nome||d.servico}`,d.plano?`Plano mensal: ${d.plano.nome} (${moeda(d.plano.valor)}/mês)`:'',`Barbeiro: ${b?.nome||d.barbeiro}`,`Data: ${d.data.split('-').reverse().join('/')}`,`Horário: ${d.hora}`,d.obs?`Observação: ${d.obs}`:'',``,`Horário reservado automaticamente pelo sistema.`].filter(Boolean).join('\\n');
+    return [`Olá! Meu agendamento na ${cfg.nome} foi registrado.`,``,`Cliente: ${d.nome}`,`WhatsApp: ${d.telefone}`,`Serviço: ${s?.nome||d.servico}`,d.plano?`Plano mensal: ${d.plano.nome} • Visita ${String(d.planoVisita||1).padStart(2,'0')} • ${moeda(Number(d.planoVisita||1)===1?d.plano.valor:0)} neste atendimento`:'',`Barbeiro: ${b?.nome||d.barbeiro}`,`Data: ${d.data.split('-').reverse().join('/')}`,`Horário: ${d.hora}`,d.obs?`Observação: ${d.obs}`:'',``,`Horário reservado automaticamente pelo sistema.`].filter(Boolean).join('\\n');
   }
   function mostrarConfirmacaoAgendamento(d){
     const modal=$('modalAgendamentoConfirmado'),resumo=$('resumoAgendamentoConfirmado'),link=$('btnEnviarWhatsAppConfirmacao');
     const s=servicos.find(x=>String(x.id)===String(d.servico)),b=barbeiros.find(x=>String(x.id)===String(d.barbeiro));
     const dataFormatada=d.data.split('-').reverse().join('/');
     const detalhes=dataFormatada+' às '+d.hora+' • '+(s?.nome||d.servico)+' • '+(b?.nome||'Leandro');
-    if(resumo)resumo.textContent=d.plano?detalhes+' • '+d.plano.nome+' ('+moeda(d.plano.valor)+'/mês)':detalhes;
+    if(resumo)resumo.textContent=d.plano?detalhes+' • '+d.plano.nome+' • Visita '+String(d.planoVisita||1).padStart(2,'0')+' • '+moeda(Number(d.planoVisita||1)===1?d.plano.valor:0)+' neste atendimento':detalhes;
     if(link){const numero=String(cfg.whatsapp||'').replace(/\\D/g,'');link.href=numero?'https://wa.me/'+numero+'?text='+encodeURIComponent(mensagemWhatsApp(d)):'#';link.hidden=!numero;}
     modal?.classList.remove('hidden');
   }
@@ -295,6 +295,16 @@ async function registrarCliente(d){
   }
 }
 
+async function proximaVisitaMensalCliente(d){
+  if(!d.plano)return 0;
+  await garantirUsuario();
+  const mes=String(d.data||'').slice(0,7),inicio=mes+'-01',fim=mes+'-31';
+  const snap=await db.collection('agendamentos').where('owner_uid','==',usuarioAtual.uid).where('data','>=',inicio).where('data','<=',fim).get();
+  const tel=telefoneLimpo(d.telefone);
+  const anteriores=snap.docs.map(doc=>doc.data()).filter(x=>telefoneLimpo(x.telefone)===tel&&String(x.status||'').toLowerCase()!=='cancelado'&&String(x.servico_nome||'').includes(d.plano.nome));
+  const numeros=anteriores.map(x=>{const m=String(x.servico_nome||'').match(/visita\s*0*(\d+)/i);return m?Number(m[1])||0:0});
+  return Math.max(anteriores.length,...numeros,0)+1;
+}
 async function salvarNovoAgendamento(d){
   await garantirUsuario();
 
@@ -343,17 +353,17 @@ async function salvarNovoAgendamento(d){
       nome:d.nome,
       telefone:telefoneLimpo(d.telefone),
       servico_id:d.servico,
-      servico_nome:d.plano?`${s?.nome||d.servico} — ${d.plano.nome} (${moeda(d.plano.valor)}/mês) • Visita 01`:s?.nome || d.servico,
+      servico_nome:d.plano?`${s?.nome||d.servico} — ${d.plano.nome} (${moeda(d.plano.valor)}/mês) • Visita ${String(d.planoVisita||1).padStart(2,'0')}`:s?.nome || d.servico,
       duracao_minutos:duracao,
       barbeiro_id:d.barbeiro,
       data:d.data,
       hora:d.hora,
       hora_solicitada:d.hora,
-      observacao:[d.obs,d.plano?`Plano mensal selecionado: ${d.plano.nome} (${moeda(d.plano.valor)}/mês) • Visita 01`:'' ].filter(Boolean).join(' | '),
+      observacao:[d.obs,d.plano?`Plano mensal selecionado: ${d.plano.nome} (${moeda(d.plano.valor)}/mês) • Visita ${String(d.planoVisita||1).padStart(2,'0')}`:'' ].filter(Boolean).join(' | '),
       status:'pendente',
       criado_em:criadoEm,
       atualizado_em:criadoEm,
-      valor:Number(d.plano?.valor ?? s?.valor ?? 0),
+      valor:d.plano?(Number(d.planoVisita||1)===1?Number(d.plano.valor):0):Number(s?.valor||0),
       owner_uid:usuarioAtual.uid
     });
 
@@ -525,7 +535,7 @@ async function enviarAgendamento(e){
 
       btn.textContent = 'Alterando...';
 
-      if(!d.plano){d.plano=(cfg.planosMensais||[]).find(p=>String(existente.servico_nome||'').includes(p.nome))||null;}
+      if(!d.plano){d.plano=(cfg.planosMensais||[]).find(p=>String(existente.servico_nome||'').includes(p.nome))||null;}if(d.plano){const mv=String(existente.servico_nome||'').match(/visita\s*0*(\d+)/i);d.planoVisita=mv?Number(mv[1])||1:1;}
       await alterarAgendamento(
         existente,
         d
@@ -571,6 +581,7 @@ async function enviarAgendamento(e){
 
     btn.textContent = 'Reservando...';
 
+    if(d.plano)d.planoVisita=await proximaVisitaMensalCliente(d);
     await salvarNovoAgendamento(d);
     await registrarCliente(d);
 
